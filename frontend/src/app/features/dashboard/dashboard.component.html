@@ -1,0 +1,793 @@
+<div class="app-layout">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="brand-details">
+        <h3>AegisMed</h3>
+        <p>Mayapada QMS v2.0</p>
+      </div>
+    </div>
+
+    <!-- Site Selector Container in Sidebar -->
+    <div class="sidebar-site-selector">
+      <label for="site-filter" class="selector-label">🏥 Hospital Site</label>
+      <div class="select-wrapper">
+        <select id="site-filter" name="selectedSiteId" [(ngModel)]="selectedSiteId" (change)="onSiteFilterChange()">
+          <option [ngValue]="undefined">🏢 Semua Rumah Sakit</option>
+          @if (data) {
+            @for (site of data.siteCompliance; track site.siteId) {
+              <option [value]="site.siteId">{{ site.siteName }}</option>
+            }
+          }
+        </select>
+        <div class="select-arrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Overview Category -->
+      <div class="menu-category">
+        <span class="category-header">OVERVIEW</span>
+        <a class="nav-link" [ngClass]="{'active': activeMenu === 'overview'}" (click)="switchMenu('overview')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Dashboard Overview</span>
+        </a>
+      </div>
+
+      <!-- Golden Hour Category -->
+      <div class="menu-category">
+        <div class="category-header-collapsible" (click)="toggleCategory('goldenHour')">
+          <span>⏱️ GOLDEN HOUR (UGD)</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['goldenHour'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        
+        <div class="collapsible-menu" [ngClass]="{'expanded': activeCategoryExpanded['goldenHour']}">
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'cardiology'}" (click)="switchMenu('cardiology')">
+            <span class="bullet">🩺</span>
+            <span>Cardiology (Door-to-ECG)</span>
+          </a>
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'orthopaedics'}" (click)="switchMenu('orthopaedics')">
+            <span class="bullet">🦴</span>
+            <span>Orthopaedics (Analgesia)</span>
+          </a>
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'neurology'}" (click)="switchMenu('neurology')">
+            <span class="bullet">🧠</span>
+            <span>Neurology (Door-to-CT)</span>
+          </a>
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'gastrohepatology'}" (click)="switchMenu('gastrohepatology')">
+            <span class="bullet">🧪</span>
+            <span>Gastrohepatology (Diag)</span>
+          </a>
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'oncology'}" (click)="switchMenu('oncology')">
+            <span class="bullet">🎗️</span>
+            <span>Oncology (Antibiotics)</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Quality Assurance Category -->
+      <div class="menu-category">
+        <div class="category-header-collapsible" (click)="toggleCategory('qualityAssurance')">
+          <span>🛡️ QUALITY ASSURANCE</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['qualityAssurance'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        
+        <div class="collapsible-menu" [ngClass]="{'expanded': activeCategoryExpanded['qualityAssurance']}">
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'audits'}" (click)="switchMenu('audits')">
+            <span class="bullet">📋</span>
+            <span>Quality Audits</span>
+          </a>
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'capas'}" (click)="switchMenu('capas')">
+            <span class="bullet">🛠️</span>
+            <span>CAPA Actions</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="theme-toggle-bar" (click)="toggleTheme()" aria-label="Toggle Theme">
+        <span class="theme-option" [class.active]="theme === 'light'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <span>Light</span>
+        </span>
+        <span class="theme-option" [class.active]="theme === 'dark'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <span>Dark</span>
+        </span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Loading State -->
+    @if (loading) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Memuat data Quality Management System...</p>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (error && !loading) {
+      <div class="error-state">
+        <h3>Gagal Memuat Data</h3>
+        <p>{{ errorMessage }}</p>
+        <button class="retry-btn" (click)="loadDashboardData()">Coba Lagi</button>
+      </div>
+    }
+
+    <!-- Content Sections -->
+    @if (!loading && !error && data) {
+      
+      <!-- ==================== OVERVIEW DASHBOARD VIEW ==================== -->
+      @if (activeMenu === 'overview') {
+        <div class="header-section">
+          <div class="title-area">
+            <h1>Quality Management Group Dashboard</h1>
+            <p>Standard & Compliance Monitoring across Mayapada Hospital Sites | Data updated: June 2026</p>
+          </div>
+          <div class="action-area">
+            <span class="refresh-indicator">Terakhir diupdate: {{ lastUpdated | date:'HH:mm:ss' }}</span>
+
+
+            <button class="btn-primary" (click)="loadDashboardData()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Refresh Data
+            </button>
+          </div>
+        </div>
+
+        <!-- ED Golden Hour Indicators Widget -->
+        <div class="ed-section">
+          <div class="ed-section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Golden Hour &#64; Mayapada - 5 Time-Critical ED Indicators</span>
+          </div>
+          
+          <div class="ed-grid">
+            @for (indicator of data.edCompliance; track indicator.indicatorName) {
+              <div class="ed-card" [ngClass]="getEdComplianceClass(indicator.complianceRate)">
+                <div class="ed-header">
+                  <div>
+                    <div class="ed-indicator-name">{{ indicator.indicatorName }}</div>
+                    <div class="ed-target-desc">{{ indicator.targetDescription }}</div>
+                  </div>
+                  <div class="ed-rate" [ngClass]="getEdComplianceClass(indicator.complianceRate)">
+                    {{ indicator.complianceRate }}%
+                  </div>
+                </div>
+                
+                <div class="progress-bar-container">
+                  <div class="progress-bar" 
+                       [style.width.%]="indicator.complianceRate"
+                       [ngClass]="getEdComplianceClass(indicator.complianceRate)">
+                  </div>
+                </div>
+                
+                <div class="ed-meta">
+                  <span><strong>{{ indicator.compliantCases }} / {{ indicator.totalCases }}</strong> Kasus Terpenuhi</span>
+                  <span class="badge" [ngClass]="getEdComplianceClass(indicator.complianceRate)">
+                    @if (indicator.complianceRate >= 90) { STRONG }
+                    @else if (indicator.complianceRate >= 80) { WARNING }
+                    @else { ACTION REQ }
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Summary Metrics Grid -->
+        <div class="summary-grid" style="margin-top: 32px;">
+          <!-- Total Audits -->
+          <div class="metric-card blue">
+            <div class="card-header">
+              <span>QUALITY AUDITS YTD</span>
+              <div class="card-icon" style="background-color: var(--color-info-bg);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+            </div>
+            <div class="card-value">{{ data.summary.totalAudits }}</div>
+            <div class="card-footer">
+              Avg. compliance score <span class="highlight">{{ data.summary.averageAuditScore }}%</span>
+            </div>
+          </div>
+
+          <!-- Total CAPAs -->
+          <div class="metric-card warning">
+            <div class="card-header">
+              <span>ACTIVE CAPA ACTIONS</span>
+              <div class="card-icon" style="background-color: var(--color-warning-bg);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+            </div>
+            <div class="card-value">{{ data.summary.totalCapa }}</div>
+            <div class="card-footer">
+              <span class="highlight">{{ data.summary.openCapa }} Open</span> | {{ data.summary.inProgressCapa }} In-Progress
+            </div>
+          </div>
+
+          <!-- Critical Issues -->
+          <div class="metric-card danger">
+            <div class="card-header">
+              <span>CRITICAL THREATS</span>
+              <div class="card-icon" style="background-color: var(--color-danger-bg);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </div>
+            </div>
+            <div class="card-value">{{ data.summary.criticalIssues }}</div>
+            <div class="card-footer">
+              Requires <span class="highlight" style="color: var(--color-danger);">immediate corrective action</span>
+            </div>
+          </div>
+
+          <!-- Resolved CAPAs -->
+          <div class="metric-card emerald">
+            <div class="card-header">
+              <span>RESOLVED ISSUES</span>
+              <div class="card-icon" style="background-color: var(--color-success-bg);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+            </div>
+            <div class="card-value">{{ data.summary.resolvedCapa }}</div>
+            <div class="card-footer">
+              Action rate <span class="highlight" style="color: var(--color-success);">{{ getResolutionRate() }}%</span> completed
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Left Panel: Compliance & Actions -->
+          <div class="left-panel" style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Site Compliance Card -->
+            <div class="section-card">
+              <div class="section-title">
+                <span>Site Compliance & Performance</span>
+              </div>
+              <div class="table-wrapper">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Hospital Site</th>
+                      <th>Code</th>
+                      <th>Total Audits</th>
+                      <th>Open CAPAs</th>
+                      <th>Average Score</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (site of getFilteredSiteCompliance(); track site.siteName) {
+                      <tr>
+                        <td class="highlight">{{ site.siteName }}</td>
+                        <td>{{ site.siteCode }}</td>
+                        <td>{{ site.auditsCount }}</td>
+                        <td>{{ site.openCapaCount }}</td>
+                        <td>
+                          <span class="score-badge" [ngClass]="getScoreClass(site.averageScore)">
+                            {{ site.averageScore }}%
+                          </span>
+                        </td>
+                        <td>
+                          @if (site.averageScore >= 90) {
+                            <span class="badge completed" style="background-color: var(--color-success-bg); color: var(--color-success);">EXCELLENT</span>
+                          } @else if (site.averageScore >= 80) {
+                            <span class="badge open" style="background-color: var(--color-info-bg); color: var(--color-info);">COMPLIANT</span>
+                          } @else {
+                            <span class="badge overdue" style="background-color: var(--color-danger-bg); color: var(--color-danger);">WARNING</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Recent Quality Audits Table -->
+            <div class="section-card">
+              <div class="section-title">
+                <span>Recent Audits</span>
+              </div>
+              <div class="table-wrapper">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Audit Name</th>
+                      <th>Site</th>
+                      <th>Date</th>
+                      <th>Score</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (audit of data.recentAudits; track audit.id) {
+                      <tr>
+                        <td class="highlight">{{ audit.title }}</td>
+                        <td>{{ audit.siteName }}</td>
+                        <td>{{ audit.auditDate | date:'mediumDate' }}</td>
+                        <td>
+                          @if (audit.status === 'Completed') {
+                            <span class="score-badge" [ngClass]="getScoreClass(audit.score)">
+                              {{ audit.score }}%
+                            </span>
+                          } @else {
+                            <span style="color: var(--text-muted);">N/A</span>
+                          }
+                        </td>
+                        <td>
+                          <span class="badge" [ngClass]="audit.status.toLowerCase()">
+                            {{ audit.status }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Recent CAPAs Table -->
+            <div class="section-card">
+              <div class="section-title">
+                <span>Recent Corrective Actions (CAPA)</span>
+              </div>
+              <div class="table-wrapper">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Action Title</th>
+                      <th>Site</th>
+                      <th>Due Date</th>
+                      <th>Severity</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (capa of data.recentCapas; track capa.id) {
+                      <tr>
+                        <td class="highlight">{{ capa.title }}</td>
+                        <td>{{ capa.siteName }}</td>
+                        <td>{{ capa.dueDate | date:'mediumDate' }}</td>
+                        <td>
+                          <span class="badge" [ngClass]="capa.severity.toLowerCase()">
+                            {{ capa.severity }}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="badge" [ngClass]="capa.status.toLowerCase()">
+                            {{ capa.status }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Quality Indicators -->
+          <div class="right-panel">
+            <div class="section-card" style="height: 100%;">
+              <div class="section-title">
+                <span>Key Quality Indicators (KQIs)</span>
+              </div>
+              <div class="indicator-list">
+                @for (ind of data.keyIndicators; track ind.name) {
+                  <div class="indicator-item">
+                    <div class="indicator-header">
+                      <span class="indicator-name">{{ ind.name }}</span>
+                      <span class="indicator-value">{{ ind.currentValue }}{{ ind.unit }}</span>
+                    </div>
+                    <div class="progress-bar-container">
+                      <div class="progress-bar" 
+                           [style.width.%]="getIndicatorPercent(ind)"
+                           [ngClass]="{
+                             'success': ind.performanceStatus === 'On Target',
+                             'danger': ind.performanceStatus === 'Below Target'
+                           }">
+                      </div>
+                    </div>
+                    <div class="indicator-meta" style="margin-top: 6px;">
+                      <span>Target: {{ ind.target }}{{ ind.unit }}</span>
+                      <span [style.color]="ind.performanceStatus === 'On Target' ? 'var(--color-success)' : 'var(--color-danger)'">
+                        {{ ind.performanceStatus }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ==================== QA MENU VIEWS ==================== -->
+      @if (activeMenu === 'audits') {
+        <div class="header-section">
+          <div class="title-area">
+            <h1>Quality Audits Monitoring</h1>
+            <p>Daftar seluruh audit kualitas klinis dan keselamatan yang dilakukan di lingkungan Mayapada Hospitals.</p>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-title">Semua Riwayat Quality Audits</div>
+          <div class="table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Judul Audit</th>
+                  <th>Kategori</th>
+                  <th>Rumah Sakit Site</th>
+                  <th>Tanggal Audit</th>
+                  <th>Auditor</th>
+                  <th>Skor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (audit of data.recentAudits; track audit.id) {
+                  <tr>
+                    <td class="highlight">{{ audit.title }}</td>
+                    <td>Clinical</td>
+                    <td>{{ audit.siteName }}</td>
+                    <td>{{ audit.auditDate | date:'dd/MM/yyyy' }}</td>
+                    <td>Dr. Sarah</td>
+                    <td>
+                      <span class="score-badge" [ngClass]="getScoreClass(audit.score)">
+                        {{ audit.score }}%
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="audit.status.toLowerCase()">{{ audit.status }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (activeMenu === 'capas') {
+        <div class="header-section">
+          <div class="title-area">
+            <h1>Corrective and Preventive Actions (CAPA)</h1>
+            <p>Pemantauan komitmen perbaikan insiden keselamatan pasien dan mutu klinis.</p>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-title">Daftar Tindakan Perbaikan Aktif</div>
+          <div class="table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Judul Tindakan</th>
+                  <th>Rumah Sakit Site</th>
+                  <th>Tanggal Dibuat</th>
+                  <th>Batas Waktu (Due Date)</th>
+                  <th>Tingkat Keparahan</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (capa of data.recentCapas; track capa.id) {
+                  <tr>
+                    <td class="highlight">{{ capa.title }}</td>
+                    <td>{{ capa.siteName }}</td>
+                    <td>10/06/2026</td>
+                    <td>{{ capa.dueDate | date:'dd/MM/yyyy' }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="capa.severity.toLowerCase()">{{ capa.severity }}</span>
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="capa.status.toLowerCase()">{{ capa.status }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- ==================== INDIVIDUAL ED INDICATORS VIEWS (GOLDEN HOUR) ==================== -->
+      @if (activeMenu !== 'overview' && activeMenu !== 'audits' && activeMenu !== 'capas') {
+        <div class="header-section">
+          <div class="title-area">
+            <h1>⏱️ {{ getEventTimeLabel() }}</h1>
+            <p>{{ getIndicatorTargetText() }} | Pemantauan Waktu Kritis Pelayanan UGD Golden Hour</p>
+          </div>
+          <div class="action-area">
+            <span class="refresh-indicator">Total Kasus: <strong>{{ activeIndicatorSubmissions.length }}</strong> Kasus Terinput</span>
+          </div>
+        </div>
+
+        <div class="indicator-page-layout">
+          <!-- Left Column: Spreadsheet / History Grid (Excel Style) -->
+          <div class="spreadsheet-container section-card">
+            <div class="section-title-spreadsheet">
+              <span>Riwayat Penginputan (Spreadsheet View)</span>
+              <span class="sheet-indicator">Achieved: 
+                <strong>
+                  {{ getCompliantCount() }}
+                </strong>
+              </span>
+            </div>
+            
+            <div class="table-wrapper">
+              <table class="excel-table">
+                <thead>
+                  <tr>
+                    <th class="col-no">No</th>
+                    <th>No Rekam Medis</th>
+                    <th>Tanggal</th>
+                    <th>Waktu Tiba di IGD</th>
+                    <th>{{ getEventTimeLabel() }}</th>
+                    <th>Selisih Waktu</th>
+                    <th>Target</th>
+                    <th>Keterangan (Jika tidak tercapai)</th>
+                    <!-- Custom Fields Columns -->
+                    @if (activeMenu === 'cardiology') {
+                      <th>ECG Interpreter</th>
+                      <th>Kasus STEMI</th>
+                    } @else if (activeMenu === 'orthopaedics') {
+                      <th>Skor Nyeri (1-10)</th>
+                      <th>Jenis Obat Analgesik</th>
+                    } @else if (activeMenu === 'neurology') {
+                      <th>Waktu Order CT</th>
+                      <th>NIHSS Score</th>
+                    } @else if (activeMenu === 'gastrohepatology') {
+                      <th>Waktu Konsul Spesialis</th>
+                      <th>Diagnosis Utama</th>
+                    } @else if (activeMenu === 'oncology') {
+                      <th>Waktu Demam Terdeteksi</th>
+                      <th>Nama Antibiotik</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (loadingSubmissions) {
+                    <tr>
+                      <td colspan="10" class="text-center" style="padding: 30px; color: var(--text-muted);">
+                        <div class="spinner-small" style="margin: 0 auto 10px;"></div>
+                        Memuat riwayat spreadsheet...
+                      </td>
+                    </tr>
+                  } @else if (activeIndicatorSubmissions.length === 0) {
+                    <tr>
+                      <td colspan="10" class="text-center" style="padding: 40px 0; color: var(--text-muted);">
+                        Belum ada data kasus terinput untuk indikator ini pada filter bulan ini.
+                      </td>
+                    </tr>
+                  } @else {
+                    @for (sub of activeIndicatorSubmissions; track sub.id; let idx = $index) {
+                      <tr [ngClass]="{'row-non-compliant': !sub.isCompliant}">
+                        <td class="col-no text-center">{{ idx + 1 }}</td>
+                        <td class="highlight text-center">{{ sub.emrNumber }}</td>
+                        <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                        <td class="text-center">{{ sub.doorTime | date:'HH:mm:ss' }}</td>
+                        <td class="text-center">{{ sub.eventTime | date:'HH:mm:ss' }}</td>
+                        <td class="text-center font-bold">
+                          <!-- Convert minutes to HH:MM format if needed, or display as minutes -->
+                          {{ sub.minutesElapsed }} Menit
+                        </td>
+                        <td class="text-center">
+                          <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
+                            {{ sub.isCompliant ? 'Achieved' : 'Not Achieved' }}
+                          </span>
+                        </td>
+                        <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
+                        
+                        <!-- Render Custom Fields dynamically -->
+                        @if (getParsedCustomFields(sub.customFieldsJson); as customFields) {
+                          @if (activeMenu === 'cardiology') {
+                            <td>{{ customFields.EcgInterpreter || '-' }}</td>
+                            <td class="text-center">
+                              @if (customFields.IsStemi) {
+                                <span class="badge-stemi">STEMI</span>
+                              } @else {
+                                <span>-</span>
+                              }
+                            </td>
+                          } @else if (activeMenu === 'orthopaedics') {
+                            <td class="text-center">{{ customFields.PainScore || '-' }}</td>
+                            <td>{{ customFields.AnalgesiaType || '-' }}</td>
+                          } @else if (activeMenu === 'neurology') {
+                            <td class="text-center">{{ (customFields.CtOrderTime | date:'HH:mm') || '-' }}</td>
+                            <td class="text-center">{{ customFields.NihssScore !== undefined ? customFields.NihssScore : '-' }}</td>
+                          } @else if (activeMenu === 'gastrohepatology') {
+                            <td class="text-center">{{ (customFields.ConsultTime | date:'HH:mm') || '-' }}</td>
+                            <td>{{ customFields.PrimaryDiagnosis || '-' }}</td>
+                          } @else if (activeMenu === 'oncology') {
+                            <td class="text-center">{{ (customFields.FeverTime | date:'HH:mm') || '-' }}</td>
+                            <td>{{ customFields.AntibioticName || '-' }}</td>
+                          }
+                        }
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right Column: Quick Data Input (Green header, spreadsheet matching) -->
+          <div class="quick-input-container">
+            <div class="input-card">
+              <div class="input-card-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span>INPUT KASUS INDIKATOR</span>
+              </div>
+              
+              <form (ngSubmit)="onSubmit()" class="excel-form">
+                <!-- Alerts -->
+                @if (submitSuccess) {
+                  <div class="alert alert-success">Kasus baru berhasil disimpan!</div>
+                }
+                @if (submitError) {
+                  <div class="alert alert-danger">{{ submitErrorMessage }}</div>
+                }
+
+                <!-- Green Inputs Section -->
+                <div class="green-inputs-group">
+                  <div class="form-group-excel">
+                    <label>Hospital Site <span class="required">*</span></label>
+                    <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
+                      @for (site of data.siteCompliance; track site.siteName) {
+                        <option [value]="site.siteId">{{ site.siteName }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-group-excel">
+                    <label>No Rekam Medis <span class="required">*</span></label>
+                    <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
+                  </div>
+
+                  <div class="form-group-excel">
+                    <label>Inisial Pasien</label>
+                    <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
+                  </div>
+
+                  <div class="form-group-excel">
+                    <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
+                    <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
+                  </div>
+
+                  <div class="form-group-excel">
+                    <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                    <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
+                  </div>
+
+                  <div class="form-group-excel">
+                    <label>{{ getEventTimeLabel() }} (hh:mm) <span class="required">*</span></label>
+                    <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
+                  </div>
+
+                  <!-- ==================== INDICATOR SPECIFIC CUSTOM QUESTIONS (GREEN INPUTS) ==================== -->
+                  
+                  <!-- CARDIOLOGY specific questions -->
+                  @if (activeMenu === 'cardiology') {
+                    <div class="form-group-excel highlight-field">
+                      <label>Dokter Pembaca / Interpreter ECG</label>
+                      <input type="text" name="ecgInterpreter" [(ngModel)]="ecgInterpreter" placeholder="Nama Dokter Sp.JP">
+                    </div>
+                    <div class="form-group-excel checkbox-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" name="isStemi" [(ngModel)]="isStemi">
+                        <span>Kasus STEMI (ST-Elevation)</span>
+                      </label>
+                    </div>
+                  }
+
+                  <!-- ORTHOPAEDICS default specific questions -->
+                  @if (activeMenu === 'orthopaedics') {
+                    <div class="form-group-excel highlight-field">
+                      <label>Skor Nyeri Pasien (1 - 10)</label>
+                      <select name="painScore" [(ngModel)]="painScore">
+                        @for (score of [1,2,3,4,5,6,7,8,9,10]; track score) {
+                          <option [value]="score">{{ score }} - {{ score >= 8 ? 'Nyeri Hebat' : score >= 4 ? 'Sedang' : 'Ringan' }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Jenis Obat Analgesik Diberikan</label>
+                      <input type="text" name="analgesiaType" [(ngModel)]="analgesiaType" placeholder="Contoh: Ketorolac 30mg IV">
+                    </div>
+                  }
+
+                  <!-- NEUROLOGY default specific questions -->
+                  @if (activeMenu === 'neurology') {
+                    <div class="form-group-excel highlight-field">
+                      <label>Waktu Order CT Scan (hh:mm)</label>
+                      <input type="time" name="ctOrderTimeOnly" [(ngModel)]="ctOrderTimeOnly">
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Skor Stroke NIHSS (0 - 42)</label>
+                      <input type="number" name="nihssScore" [(ngModel)]="nihssScore" min="0" max="42">
+                    </div>
+                  }
+
+                  <!-- GASTROHEPATOLOGY default specific questions -->
+                  @if (activeMenu === 'gastrohepatology') {
+                    <div class="form-group-excel highlight-field">
+                      <label>Waktu Konsul Dokter Spesialis (hh:mm)</label>
+                      <input type="time" name="consultTimeOnly" [(ngModel)]="consultTimeOnly">
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Diagnosis Utama Awal</label>
+                      <input type="text" name="primaryDiagnosis" [(ngModel)]="primaryDiagnosis" placeholder="Contoh: Apendistis Akut">
+                    </div>
+                  }
+
+                  <!-- ONCOLOGY default specific questions -->
+                  @if (activeMenu === 'oncology') {
+                    <div class="form-group-excel highlight-field">
+                      <label>Waktu Demam Terdeteksi (hh:mm)</label>
+                      <input type="time" name="feverTimeOnly" [(ngModel)]="feverTimeOnly">
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Nama Obat Antibiotik</label>
+                      <input type="text" name="antibioticName" [(ngModel)]="antibioticName" placeholder="Contoh: Meropenem IV">
+                    </div>
+                  }
+
+                  <!-- Clinical notes (Reason for failure) -->
+                  <div class="form-group-excel">
+                    <label>
+                      Keterangan / Catatan Klinis
+                      <span class="required" *ngIf="previewMinutes !== null && !previewCompliant">* (Wajib jika target terlewati)</span>
+                    </label>
+                    <textarea name="clinicalNotes" [(ngModel)]="clinicalNotes" rows="2" 
+                              [placeholder]="previewMinutes !== null && !previewCompliant ? 'Wajib isi alasan keterlambatan tindakan di sini...' : 'Masukkan keterangan klinis / catatan tambahan'"></textarea>
+                  </div>
+                </div>
+
+                <!-- Yellow Calculated Formula Section -->
+                <div class="yellow-formulas-group">
+                  <div class="formula-title">FORMULA (Dihitung Otomatis)</div>
+                  
+                  <div class="formula-row">
+                    <span class="formula-label">Selisih Waktu:</span>
+                    <span class="formula-val">
+                      {{ previewMinutes !== null ? (previewMinutes + ' Menit') : '-- : --' }}
+                    </span>
+                  </div>
+
+                  <div class="formula-row">
+                    <span class="formula-label">Target Kepatuhan:</span>
+                    <span class="formula-val">
+                      @if (previewMinutes === null) {
+                        --
+                      } @else {
+                        <span class="badge" [ngClass]="previewCompliant ? 'completed' : 'overdue'">
+                          {{ previewCompliant ? 'Achieved' : 'Not Achieved' }}
+                        </span>
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <div class="input-card-footer">
+                  <button type="submit" class="btn-save" [disabled]="submitting">
+                    {{ submitting ? 'Menyimpan...' : 'Simpan Kasus UGD' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      }
+
+    }
+  </main>
+</div>

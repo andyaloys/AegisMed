@@ -1,0 +1,6 @@
+@AegisMed.API_HostAddress = http://localhost:5111
+
+GET {{AegisMed.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

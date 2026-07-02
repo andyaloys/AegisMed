@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Premium Slate Light Theme (Default) */
+  --bg-main: #f8fafc;           /* Soft light blue-grey background */
+  --bg-card: #ffffff;           /* Clean white card backgrounds */
+  --bg-card-hover: #f1f5f9;     /* Subtle light grey hover */
+  --border-color: #e2e8f0;      /* Clean grey borders */
+  --border-color-hover: #cbd5e1; /* Hover grey border */
+  
+  /* Light Mode Text Colors */
+  --text-primary: #0f172a;      /* Dark slate for high readability */
+  --text-secondary: #475569;    /* Medium slate for secondary labels */
+  --text-muted: #94a3b8;        /* Light grey-slate for metadata */
+  
+  /* Status Colors (Optimized for light mode contrast) */
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.08);
+  --color-warning: #d97706;     /* Darker amber for contrast */
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-danger: #e11d48;      /* Darker rose/red for contrast */
+  --color-danger-bg: rgba(225, 29, 72, 0.08);
+  --color-info: #0284c7;        /* Darker sky blue for contrast */
+  --color-info-bg: rgba(2, 132, 199, 0.08);
+  
+  /* Inputs, Overlays, Shadows & Dialogs */
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+  --shadow-input-focus: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  --bg-overlay-subtle: rgba(15, 23, 42, 0.02);
+  --bg-overlay-hover: rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+
+  /* Fonts */
+  --font-title: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  
+  /* Transitions */
+  --transition-fast: all 0.2s ease;
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  /* Slate Enterprise Dark Theme Overrides */
+  --bg-main: #0b0f19;
+  --bg-card: #121824;
+  --bg-card-hover: #1b2336;
+  --border-color: #232d42;
+  --border-color-hover: #32415c;
+  
+  /* Dark Mode Text Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  /* Status Colors (Optimized for dark mode glow) */
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-danger: #f43f5e;
+  --color-danger-bg: rgba(244, 63, 94, 0.1);
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.1);
+
+  /* Inputs, Overlays, Shadows & Dialogs (Dark) */
+  --bg-input: rgba(255, 255, 255, 0.02);
+  --bg-input-focus: rgba(255, 255, 255, 0.04);
+  --shadow-input-focus: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  --bg-overlay-subtle: rgba(255, 255, 255, 0.02);
+  --bg-overlay-hover: rgba(255, 255, 255, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.925rem;
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

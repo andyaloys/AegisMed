@@ -1,0 +1,21 @@
+# Visual Studio / .NET Core
+[Bb]in/
+[Oo]bj/
+[Vv]s/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node & Angular
+node_modules/
+dist/
+.angular/
+.vscode/
+.idea/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
