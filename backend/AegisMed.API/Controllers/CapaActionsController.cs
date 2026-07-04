@@ -150,17 +150,17 @@ public class CapaActionsController : ControllerBase
             return BadRequest("Bulan (Month) wajib diisi (Format: YYYY-MM).");
         }
 
-        // 1. Ambil semua indikator UGD
-        var indicators = await _context.EdIndicators.ToListAsync();
-        
-        // 2. Ambil semua submissions untuk site & month terpilih
+        int generatedCount = 0;
+
+        // ══════════════════════════════════════════════════════════════════════
+        // 1. SCAN UGD INDICATORS (calculated from EdCaseSubmissions compliance rate)
+        // ══════════════════════════════════════════════════════════════════════
+        var edIndicators = await _context.EdIndicators.ToListAsync();
         var submissions = await _context.EdCaseSubmissions
             .Where(s => s.HospitalSiteId == request.HospitalSiteId && s.SubmissionMonth == request.Month)
             .ToListAsync();
 
-        int generatedCount = 0;
-
-        foreach (var indicator in indicators)
+        foreach (var indicator in edIndicators)
         {
             var indicatorSubmissions = submissions.Where(s => s.EdIndicatorId == indicator.Id).ToList();
             if (!indicatorSubmissions.Any())
@@ -185,7 +185,7 @@ public class CapaActionsController : ControllerBase
                     var capa = new CapaAction
                     {
                         Title = capaTitle,
-                        Description = $"Kepatuhan untuk indikator {indicator.Name} di bawah 90% (Kepatuhan: {rate:F1}%, Kasus: {compliant}/{total}). Silakan isi analisis akar masalah, tindakan perbaikan, dan pencegahan.",
+                        Description = $"Kepatuhan untuk indikator UGD {indicator.Name} di bawah 90% (Kepatuhan: {rate:F1}%, Kasus: {compliant}/{total}). Silakan isi analisis akar masalah, tindakan perbaikan, dan pencegahan.",
                         Status = CapaStatus.Open,
                         Severity = CapaSeverity.High,
                         CreatedDate = DateTime.UtcNow,
@@ -205,7 +205,51 @@ public class CapaActionsController : ControllerBase
             }
         }
 
-        // 3. Catat di tabel ClosedPeriods (Tutup Buku) untuk site & month terpilih
+        // ══════════════════════════════════════════════════════════════════════
+        // 2. SCAN KEY QUALITY INDICATORS (from QualityIndicators table)
+        // ══════════════════════════════════════════════════════════════════════
+        var qualityIndicators = await _context.QualityIndicators
+            .Where(q => q.HospitalSiteId == request.HospitalSiteId && q.Month == request.Month)
+            .ToListAsync();
+
+        foreach (var qInd in qualityIndicators)
+        {
+            // Skip negative safety metrics (like Infection rate or Falls where lower is better)
+            bool isNegMetric = qInd.Name.Contains("Infection") || qInd.Name.Contains("Fall") || qInd.Name.Contains("Errors");
+            if (qInd.Unit == "%" && !isNegMetric && qInd.Value < 90.0)
+            {
+                string capaTitle = $"CAPA: {qInd.Name} - {request.Month}";
+                var exists = await _context.CapaActions.AnyAsync(c => 
+                    c.HospitalSiteId == request.HospitalSiteId && 
+                    c.Title == capaTitle);
+
+                if (!exists)
+                {
+                    var capa = new CapaAction
+                    {
+                        Title = capaTitle,
+                        Description = $"Nilai indikator mutu {qInd.Name} di bawah 90% (Pencapaian: {qInd.Value}%). Silakan isi analisis akar masalah, tindakan perbaikan, dan pencegahan.",
+                        Status = CapaStatus.Open,
+                        Severity = CapaSeverity.High,
+                        CreatedDate = DateTime.UtcNow,
+                        DueDate = DateTime.UtcNow.AddDays(14),
+                        AssignedTo = "Komite Mutu / Kepala Unit",
+                        HospitalSiteId = request.HospitalSiteId,
+                        RootCause = string.Empty,
+                        CorrectiveAction = string.Empty,
+                        PreventiveAction = string.Empty,
+                        ActionPlan = string.Empty,
+                        SubmissionMonth = request.Month
+                    };
+                    _context.CapaActions.Add(capa);
+                    generatedCount++;
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // 3. LOCK PERIOD (Tutup Buku)
+        // ══════════════════════════════════════════════════════════════════════
         var periodClosed = await _context.ClosedPeriods.AnyAsync(cp => 
             cp.HospitalSiteId == request.HospitalSiteId && 
             cp.Month == request.Month);
@@ -239,7 +283,6 @@ public class CapaActionsController : ControllerBase
             return NotFound("Tindakan CAPA tidak ditemukan.");
         }
 
-        // Reopen the period (Tutup Buku dicabut) if deleting the generated CAPA
         if (!string.IsNullOrEmpty(capa.SubmissionMonth))
         {
             var closedPeriod = await _context.ClosedPeriods.FirstOrDefaultAsync(cp => 
