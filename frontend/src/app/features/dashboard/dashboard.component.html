@@ -533,10 +533,16 @@
             </div>
             <p>Pemantauan komitmen perbaikan insiden keselamatan pasien dan mutu klinis.</p>
           </div>
-          <button class="btn-header-green" (click)="openCapaModal()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>Tambah Tindakan CAPA</span>
-          </button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-header-blue" (click)="openGenerateCapaModal()" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>⚡ Generate CAPA Bulanan</span>
+            </button>
+            <button class="btn-header-green" (click)="openCapaModal()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>➕ Buat Manual</span>
+            </button>
+          </div>
         </div>
         <div class="section-card">
           <div class="section-title">Daftar Tindakan Perbaikan Aktif</div>
@@ -749,8 +755,12 @@
                             </td>
                             <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
                             <td class="aksi-cell">
-                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
-                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              @if (!sub.isClosed) {
+                                <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                                <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              } @else {
+                                <span class="badge completed" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.72rem; padding: 2px 6px; display: inline-flex; align-items: center; gap: 3px;">🔒 Tutup</span>
+                              }
                             </td>
                           } @else if (activeMenu === 'orthopaedics') {
                             <!-- Orthopaedics: No | No RM | Diagnosa | Tanggal | Waktu IGD | Skala Nyeri | Waktu Periksa | Waktu Analgetik | Selisih | Target | Keterangan -->
@@ -770,8 +780,12 @@
                             </td>
                             <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
                             <td class="aksi-cell">
-                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
-                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              @if (!sub.isClosed) {
+                                <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                                <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              } @else {
+                                <span class="badge completed" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.72rem; padding: 2px 6px; display: inline-flex; align-items: center; gap: 3px;">🔒 Tutup</span>
+                              }
                             </td>
                           } @else if (activeMenu === 'neurology') {
                             <!-- Neurology: No | No RM | Diagnosa | Tindakan Radiologi | Tanggal | Waktu IGD | Waktu CT/MRI | Selisih | Target | Keterangan -->
@@ -790,8 +804,12 @@
                             </td>
                             <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
                             <td class="aksi-cell">
-                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
-                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              @if (!sub.isClosed) {
+                                <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                                <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              } @else {
+                                <span class="badge completed" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.72rem; padding: 2px 6px; display: inline-flex; align-items: center; gap: 3px;">🔒 Tutup</span>
+                              }
                             </td>
                           } @else if (activeMenu === 'gastrohepatology') {
                             <!-- Gastro: No | No RM | Diagnosa | Tanggal | Pemeriksaan | Waktu IGD | Waktu Periksa | Waktu Request | Waktu Diagnostik | Selisih | Target | Keterangan -->
@@ -812,8 +830,12 @@
                             </td>
                             <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
                             <td class="aksi-cell">
-                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
-                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              @if (!sub.isClosed) {
+                                <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                                <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              } @else {
+                                <span class="badge completed" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.72rem; padding: 2px 6px; display: inline-flex; align-items: center; gap: 3px;">🔒 Tutup</span>
+                              }
                             </td>
                           } @else if (activeMenu === 'oncology') {
                             <!-- Oncology: No | No RM | Diagnosa | Tanggal | Jenis Antibiotik | Waktu IGD | Waktu Pemeriksaan | Waktu Resep | Waktu Antibiotik | Selisih | Target | Keterangan -->
@@ -834,8 +856,12 @@
                             </td>
                             <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
                             <td class="aksi-cell">
-                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
-                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              @if (!sub.isClosed) {
+                                <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                                <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              } @else {
+                                <span class="badge completed" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.72rem; padding: 2px 6px; display: inline-flex; align-items: center; gap: 3px;">🔒 Tutup</span>
+                              }
                             </td>
                           } @else if (activeMenu === 'mom-children') {
                             <!-- Mom & Children: No | No RM | Kasus Kegawatan | Tanggal | Waktu IGD | Waktu Bidan | Selisih | Target | Keterangan -->
@@ -853,8 +879,12 @@
                             </td>
                             <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
                             <td class="aksi-cell">
-                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
-                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              @if (!sub.isClosed) {
+                                <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                                <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                              } @else {
+                                <span class="badge completed" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.72rem; padding: 2px 6px; display: inline-flex; align-items: center; gap: 3px;">🔒 Tutup</span>
+                              }
                             </td>
                           }
                         }
@@ -1620,12 +1650,101 @@
                 <label>DESKRIPSI TINDAKAN</label>
                 <textarea name="newCapaDescription" [(ngModel)]="newCapaDescription" rows="3" placeholder="Deskripsikan tindakan korektif dan preventif secara detail..."></textarea>
               </div>
+
+              <!-- Clinical Process Section (Akar Masalah, Corrective, Preventive, Action Plan) -->
+              <div style="background: rgba(16, 185, 129, 0.04); padding: 16px; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.2); margin-top: 15px;">
+                <div style="font-weight: 700; font-size: 0.8rem; color: #059669; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Analisis & Rencana Tindakan Mutu (Clinical CAPA)</div>
+                
+                <div class="form-group-excel">
+                  <label>AKAR MASALAH (ROOT CAUSE)</label>
+                  <textarea name="newCapaRootCause" [(ngModel)]="newCapaRootCause" rows="2" placeholder="Analisis penyebab utama kegagalan target kepatuhan indikator..."></textarea>
+                </div>
+
+                <div class="form-group-excel">
+                  <label>TINDAKAN PERBAIKAN (CORRECTIVE ACTION)</label>
+                  <textarea name="newCapaCorrectiveAction" [(ngModel)]="newCapaCorrectiveAction" rows="2" placeholder="Tindakan perbaikan segera untuk mengatasi masalah..."></textarea>
+                </div>
+
+                <div class="form-group-excel">
+                  <label>TINDAKAN PENCEGAHAN (PREVENTIVE ACTION)</label>
+                  <textarea name="newCapaPreventiveAction" [(ngModel)]="newCapaPreventiveAction" rows="2" placeholder="Tindakan pencegahan jangka panjang agar insiden tidak terulang..."></textarea>
+                </div>
+
+                <div class="form-group-excel">
+                  <label>RENCANA TINDAKAN (ACTION PLAN)</label>
+                  <textarea name="newCapaActionPlan" [(ngModel)]="newCapaActionPlan" rows="2" placeholder="Rencana detail implementasi dari rumah sakit (staf, unit, dsb)..."></textarea>
+                </div>
+              </div>
+
             </div>
 
             <div class="input-card-footer" style="display: flex; gap: 12px; justify-content: flex-end; padding: 14px 18px;">
               <button type="button" class="btn-modal-cancel" (click)="closeCapaModal()" [disabled]="submittingCapa" style="margin: 0;">Batal</button>
               <button type="submit" class="btn-save" [disabled]="submittingCapa" style="margin: 0; padding: 9px 24px;">
                 {{ submittingCapa ? 'Menyimpan...' : 'Simpan Tindakan' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════ GENERATE CAPA BULANAN MODAL ═══════════════ -->
+  @if (data && showGenerateCapaModal) {
+    <div class="modal-overlay" (click)="closeGenerateCapaModal()">
+      <div class="modal-card-excel" style="max-width: 480px;" (click)="$event.stopPropagation()">
+        
+        <div class="input-card">
+          <div class="input-card-header" style="background: linear-gradient(135deg, #3b82f6, #2563eb); justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="bullet">⚡</span>
+              <span>GENERATE CAPA BULANAN</span>
+            </div>
+            <button (click)="closeGenerateCapaModal()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px 8px; font-weight: bold;">✕</button>
+          </div>
+
+          <form (submit)="executeGenerateCapas()" class="excel-form" style="padding: 16px;">
+            @if (genCapaSuccess) {
+              <div class="alert alert-success" style="margin-bottom: 16px;">
+                <strong>Berhasil!</strong> {{ genCapaMessage }}
+              </div>
+            }
+            @if (genCapaError) {
+              <div class="alert alert-danger" style="margin-bottom: 16px;">
+                <strong>Gagal!</strong> {{ genCapaMessage }}
+              </div>
+            }
+
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4;">
+              Sistem akan memindai seluruh indikator UGD untuk site dan bulan terpilih. Indikator dengan kepatuhan <strong>di bawah 90%</strong> akan otomatis dibuatkan tindakan CAPA. 
+              <br><br>
+              <strong style="color: #dc2626;">PENTING:</strong> Setelah digenerate, data spreadsheet indikator untuk periode tersebut akan <strong>DITUTUP (LOCKED)</strong> dan tidak bisa diedit/dihapus lagi.
+            </p>
+
+            <div class="green-inputs-group" style="background: rgba(59, 130, 246, 0.04); border-color: rgba(59, 130, 246, 0.2);">
+              <!-- 1. HOSPITAL SITE -->
+              <div class="form-group-excel">
+                <label>HOSPITAL SITE <span class="required">*</span></label>
+                <select name="genCapaSiteId" [(ngModel)]="genCapaSiteId" required [disabled]="generatingCapa">
+                  @for (site of data.siteCompliance; track site.siteName) {
+                    <option [value]="site.siteId">{{ site.siteName }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- 2. BULAN -->
+              <div class="form-group-excel">
+                <label>PILIH BULAN <span class="required">*</span></label>
+                <input type="month" name="genCapaMonth" [(ngModel)]="genCapaMonth" required [disabled]="generatingCapa">
+              </div>
+            </div>
+
+            <div class="input-card-footer" style="display: flex; gap: 12px; justify-content: flex-end; padding: 14px 0 0 0; margin-top: 16px; border-top: 1px solid var(--border-light);">
+              <button type="button" class="btn-modal-cancel" (click)="closeGenerateCapaModal()" [disabled]="generatingCapa" style="margin: 0;">Batal</button>
+              <button type="submit" class="btn-save" style="background: linear-gradient(135deg, #3b82f6, #2563eb); margin: 0; padding: 9px 24px;" [disabled]="generatingCapa">
+                {{ generatingCapa ? 'Memproses...' : '⚡ Generate Sekarang' }}
               </button>
             </div>
           </form>

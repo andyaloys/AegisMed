@@ -123,6 +123,10 @@ export class DashboardComponent implements OnInit {
   newCapaDueDate = '';
   newCapaAssignedTo = '';
   newCapaSiteId = '';
+  newCapaRootCause = '';
+  newCapaCorrectiveAction = '';
+  newCapaPreventiveAction = '';
+  newCapaActionPlan = '';
 
   // CAPA edit/delete fields
   editingCapa: any = null;
@@ -132,6 +136,15 @@ export class DashboardComponent implements OnInit {
   updatingCapa = false;
   updateCapaSuccess = false;
   updateCapaError = false;
+
+  // Generate CAPA state fields
+  showGenerateCapaModal = false;
+  genCapaSiteId = '';
+  genCapaMonth = '2026-07';
+  generatingCapa = false;
+  genCapaSuccess = false;
+  genCapaError = false;
+  genCapaMessage = '';
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -728,6 +741,10 @@ export class DashboardComponent implements OnInit {
     this.newCapaDueDate = new Date().toISOString().split('T')[0];
     this.newCapaAssignedTo = '';
     this.newCapaSiteId = this.selectedSiteId || (this.data?.siteCompliance?.[0]?.siteId || '');
+    this.newCapaRootCause = '';
+    this.newCapaCorrectiveAction = '';
+    this.newCapaPreventiveAction = '';
+    this.newCapaActionPlan = '';
     this.capaSuccess = false;
     this.capaError = false;
   }
@@ -746,6 +763,10 @@ export class DashboardComponent implements OnInit {
     this.newCapaDueDate = capa.dueDate ? new Date(capa.dueDate).toISOString().split('T')[0] : '';
     this.newCapaAssignedTo = capa.assignedTo;
     this.newCapaSiteId = capa.hospitalSiteId;
+    this.newCapaRootCause = capa.rootCause || '';
+    this.newCapaCorrectiveAction = capa.correctiveAction || '';
+    this.newCapaPreventiveAction = capa.preventiveAction || '';
+    this.newCapaActionPlan = capa.actionPlan || '';
     this.showCapaFormModal = true;
     this.capaSuccess = false;
     this.capaError = false;
@@ -765,7 +786,11 @@ export class DashboardComponent implements OnInit {
       status: this.newCapaStatus,
       dueDate: new Date(this.newCapaDueDate).toISOString(),
       assignedTo: this.newCapaAssignedTo,
-      hospitalSiteId: this.newCapaSiteId
+      hospitalSiteId: this.newCapaSiteId,
+      rootCause: this.newCapaRootCause,
+      correctiveAction: this.newCapaCorrectiveAction,
+      preventiveAction: this.newCapaPreventiveAction,
+      actionPlan: this.newCapaActionPlan
     };
 
     this.submittingCapa = true;
@@ -827,6 +852,49 @@ export class DashboardComponent implements OnInit {
       error: (err) => {
         this.deletingCapa = false;
         console.error(err);
+      }
+    });
+  }
+
+  // ── GENERATE CAPA ACTIONS ──────────────────────────────────────────
+  openGenerateCapaModal(): void {
+    this.showGenerateCapaModal = true;
+    this.genCapaSiteId = this.selectedSiteId || (this.data?.siteCompliance?.[0]?.siteId || '');
+    this.genCapaMonth = new Date().toISOString().slice(0, 7); // Default to current month "YYYY-MM"
+    this.genCapaSuccess = false;
+    this.genCapaError = false;
+  }
+
+  closeGenerateCapaModal(): void {
+    this.showGenerateCapaModal = false;
+  }
+
+  executeGenerateCapas(): void {
+    if (!this.genCapaSiteId || !this.genCapaMonth) {
+      this.genCapaError = true;
+      this.genCapaMessage = 'Mohon lengkapi pilihan rumah sakit dan bulan.';
+      return;
+    }
+    this.generatingCapa = true;
+    this.genCapaError = false;
+    this.genCapaSuccess = false;
+
+    this.dashboardService.generateCapas(this.genCapaSiteId, this.genCapaMonth).subscribe({
+      next: (res: any) => {
+        this.generatingCapa = false;
+        this.genCapaSuccess = true;
+        this.genCapaMessage = res.message || 'CAPA berhasil digenerate!';
+        this.loadCapaActions();
+        this.loadDashboardData();
+        // Close modal after delay
+        setTimeout(() => {
+          this.showGenerateCapaModal = false;
+        }, 3000);
+      },
+      error: (err) => {
+        this.generatingCapa = false;
+        this.genCapaError = true;
+        this.genCapaMessage = err.error || 'Gagal meng-generate CAPA untuk periode ini.';
       }
     });
   }

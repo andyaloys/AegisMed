@@ -50,6 +50,12 @@ public class EdSubmissionsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateSubmission([FromBody] CreateEdSubmissionDto dto)
     {
+        var isLocked = await _context.EdCaseSubmissions.AnyAsync(s => s.HospitalSiteId == dto.HospitalSiteId && s.SubmissionMonth == dto.SubmissionMonth && s.IsClosed);
+        if (isLocked)
+        {
+            return BadRequest("Periode penginputan untuk bulan ini di site terpilih sudah DITUTUP (locked) karena CAPA sudah digenerate.");
+        }
+
         if (dto.EventTime < dto.DoorTime)
             return BadRequest("Waktu tindakan tidak boleh lebih awal dari waktu kedatangan (Door Time).");
 
@@ -93,6 +99,9 @@ public class EdSubmissionsController : ControllerBase
         if (submission == null)
             return NotFound("Data tidak ditemukan.");
 
+        if (submission.IsClosed)
+            return BadRequest("Data ini sudah ditutup (locked) karena CAPA untuk periode ini sudah digenerate. Data tidak dapat diubah.");
+
         if (dto.EventTime < dto.DoorTime)
             return BadRequest("Waktu tindakan tidak boleh lebih awal dari waktu kedatangan.");
 
@@ -123,6 +132,9 @@ public class EdSubmissionsController : ControllerBase
         var submission = await _context.EdCaseSubmissions.FindAsync(id);
         if (submission == null)
             return NotFound("Data tidak ditemukan.");
+
+        if (submission.IsClosed)
+            return BadRequest("Data ini sudah ditutup (locked) karena CAPA untuk periode ini sudah digenerate. Data tidak dapat dihapus.");
 
         _context.EdCaseSubmissions.Remove(submission);
         await _context.SaveChangesAsync();

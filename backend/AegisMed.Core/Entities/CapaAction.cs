@@ -30,4 +30,9 @@ public class CapaAction
     
     public Guid HospitalSiteId { get; set; }
     public HospitalSite? HospitalSite { get; set; }
+
+    public string RootCause { get; set; } = string.Empty;
+    public string CorrectiveAction { get; set; } = string.Empty;
+    public string PreventiveAction { get; set; } = string.Empty;
+    public string ActionPlan { get; set; } = string.Empty;
 }

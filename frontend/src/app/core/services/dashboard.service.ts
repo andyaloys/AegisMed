@@ -155,4 +155,8 @@ export class DashboardService {
   deleteCapaAction(id: string): Observable<any> {
     return this.http.delete<any>(this.getApiUrl(`capaactions/${id}`));
   }
+
+  generateCapas(siteId: string, month: string): Observable<any> {
+    return this.http.post<any>(this.getApiUrl('capaactions/generate'), { hospitalSiteId: siteId, month });
+  }
 }
