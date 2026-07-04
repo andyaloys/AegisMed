@@ -25,6 +25,4 @@ public class EdCaseSubmission
 
     public Guid HospitalSiteId { get; set; }
     public HospitalSite? HospitalSite { get; set; }
-
-    public bool IsClosed { get; set; } = false;
 }

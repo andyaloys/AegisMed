@@ -111,8 +111,7 @@ public class EdSubmissionsController : ControllerBase
             CustomFieldsJson = dto.CustomFieldsJson ?? "{}",
             HospitalSiteId = dto.HospitalSiteId,
             CreatedDate = DateTime.UtcNow,
-            CreatedBy = "UGD Staff",
-            IsClosed = false
+            CreatedBy = "UGD Staff"
         };
 
         _context.EdCaseSubmissions.Add(submission);
