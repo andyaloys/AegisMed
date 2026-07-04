@@ -4,5 +4,5 @@ namespace AegisMed.Core.Interfaces;
 
 public interface IDashboardService
 {
-    Task<DashboardDto> GetDashboardDataAsync(Guid? siteId);
+    Task<DashboardDto> GetDashboardDataAsync(Guid? siteId, DateTime? startDate, DateTime? endDate);
 }

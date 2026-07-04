@@ -15,7 +15,7 @@ public class DashboardService : IDashboardService
         _context = context;
     }
 
-    public async Task<DashboardDto> GetDashboardDataAsync(Guid? siteId)
+    public async Task<DashboardDto> GetDashboardDataAsync(Guid? siteId, System.DateTime? startDate, System.DateTime? endDate)
     {
         var auditQuery = _context.QualityAudits.Include(a => a.HospitalSite).AsQueryable();
         var capaQuery = _context.CapaActions.Include(c => c.HospitalSite).AsQueryable();
@@ -28,6 +28,28 @@ public class DashboardService : IDashboardService
             capaQuery = capaQuery.Where(c => c.HospitalSiteId == siteId.Value);
             indicatorQuery = indicatorQuery.Where(i => i.HospitalSiteId == siteId.Value);
             edSubmissionQuery = edSubmissionQuery.Where(e => e.HospitalSiteId == siteId.Value);
+        }
+
+        if (startDate.HasValue)
+        {
+            var start = startDate.Value.Date;
+            auditQuery = auditQuery.Where(a => a.AuditDate >= start);
+            capaQuery = capaQuery.Where(c => c.CreatedDate >= start);
+            edSubmissionQuery = edSubmissionQuery.Where(e => e.DoorTime >= start);
+            
+            var startMonthStr = start.ToString("yyyy-MM");
+            indicatorQuery = indicatorQuery.Where(i => string.Compare(i.Month, startMonthStr) >= 0);
+        }
+
+        if (endDate.HasValue)
+        {
+            var end = endDate.Value.Date.AddDays(1).AddTicks(-1);
+            auditQuery = auditQuery.Where(a => a.AuditDate <= end);
+            capaQuery = capaQuery.Where(c => c.CreatedDate <= end);
+            edSubmissionQuery = edSubmissionQuery.Where(e => e.DoorTime <= end);
+
+            var endMonthStr = end.ToString("yyyy-MM");
+            indicatorQuery = indicatorQuery.Where(i => string.Compare(i.Month, endMonthStr) <= 0);
         }
 
         var audits = await auditQuery.ToListAsync();

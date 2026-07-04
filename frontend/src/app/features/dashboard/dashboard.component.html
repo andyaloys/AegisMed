@@ -1,14 +1,21 @@
 <div class="app-layout">
   <!-- Sidebar Navigation -->
-  <aside class="sidebar">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed" [class.mobile-open]="mobileMenuOpen">
     <div class="sidebar-brand">
       <div class="brand-logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M6 12h3.5l1.5-5 2 10 1.5-6.5 1 2.5 1-1h1.5"/></svg>
       </div>
       <div class="brand-details">
         <h3>AegisMed</h3>
         <p>Mayapada QMS v2.0</p>
       </div>
+      <button class="sidebar-toggle-btn" (click)="toggleSidebar()" aria-label="Toggle Sidebar">
+        @if (!sidebarCollapsed) {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+        } @else {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+        }
+      </button>
     </div>
 
     <!-- Site Selector Container in Sidebar -->
@@ -29,62 +36,74 @@
       </div>
     </div>
 
+    <!-- Sidebar selector spacing -->
+
     <nav class="sidebar-nav">
       <!-- Overview Category -->
       <div class="menu-category">
-        <span class="category-header">OVERVIEW</span>
+        <span class="category-header"><span class="category-text">OVERVIEW</span></span>
         <a class="nav-link" [ngClass]="{'active': activeMenu === 'overview'}" (click)="switchMenu('overview')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span>Dashboard Overview</span>
+          <span class="link-text">Dashboard Overview</span>
         </a>
       </div>
 
       <!-- Golden Hour Category -->
       <div class="menu-category">
-        <div class="category-header-collapsible" (click)="toggleCategory('goldenHour')">
-          <span>⏱️ GOLDEN HOUR (UGD)</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['goldenHour'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+        <div class="category-header-collapsible" (click)="!sidebarCollapsed ? toggleCategory('goldenHour') : null">
+          <span class="category-title">
+            <span class="category-icon">⏱️</span>
+            <span class="category-text">GOLDEN HOUR (UGD)</span>
+          </span>
+          <svg class="category-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['goldenHour'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         
         <div class="collapsible-menu" [ngClass]="{'expanded': activeCategoryExpanded['goldenHour']}">
           <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'cardiology'}" (click)="switchMenu('cardiology')">
             <span class="bullet">🩺</span>
-            <span>Cardiology (Door-to-ECG)</span>
+            <span class="link-text">Cardiology (Door-to-ECG)</span>
           </a>
           <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'orthopaedics'}" (click)="switchMenu('orthopaedics')">
             <span class="bullet">🦴</span>
-            <span>Orthopaedics (Analgesia)</span>
+            <span class="link-text">Orthopaedics (Analgesia)</span>
           </a>
           <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'neurology'}" (click)="switchMenu('neurology')">
             <span class="bullet">🧠</span>
-            <span>Neurology (Door-to-CT)</span>
+            <span class="link-text">Neurology (Door-to-CT)</span>
           </a>
           <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'gastrohepatology'}" (click)="switchMenu('gastrohepatology')">
             <span class="bullet">🧪</span>
-            <span>Gastrohepatology (Diag)</span>
+            <span class="link-text">Gastrohepatology (Diag)</span>
           </a>
           <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'oncology'}" (click)="switchMenu('oncology')">
             <span class="bullet">🎗️</span>
-            <span>Oncology (Antibiotics)</span>
+            <span class="link-text">Oncology (Antibiotics)</span>
+          </a>
+          <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'mom-children'}" (click)="switchMenu('mom-children')">
+            <span class="bullet">👶</span>
+            <span class="link-text">Mom &amp; Children (Respon Bidan)</span>
           </a>
         </div>
       </div>
 
       <!-- Quality Assurance Category -->
       <div class="menu-category">
-        <div class="category-header-collapsible" (click)="toggleCategory('qualityAssurance')">
-          <span>🛡️ QUALITY ASSURANCE</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['qualityAssurance'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+        <div class="category-header-collapsible" (click)="!sidebarCollapsed ? toggleCategory('qualityAssurance') : null">
+          <span class="category-title">
+            <span class="category-icon">🛡️</span>
+            <span class="category-text">QUALITY ASSURANCE</span>
+          </span>
+          <svg class="category-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['qualityAssurance'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         
         <div class="collapsible-menu" [ngClass]="{'expanded': activeCategoryExpanded['qualityAssurance']}">
           <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'audits'}" (click)="switchMenu('audits')">
             <span class="bullet">📋</span>
-            <span>Quality Audits</span>
+            <span class="link-text">Quality Audits</span>
           </a>
           <a class="nav-sub-link" [ngClass]="{'active': activeMenu === 'capas'}" (click)="switchMenu('capas')">
             <span class="bullet">🛠️</span>
-            <span>CAPA Actions</span>
+            <span class="link-text">CAPA Actions</span>
           </a>
         </div>
       </div>
@@ -93,15 +112,31 @@
       <button class="theme-toggle-bar" (click)="toggleTheme()" aria-label="Toggle Theme">
         <span class="theme-option" [class.active]="theme === 'light'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-          <span>Light</span>
+          <span class="theme-text">Light</span>
         </span>
         <span class="theme-option" [class.active]="theme === 'dark'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-          <span>Dark</span>
+          <span class="theme-text">Dark</span>
         </span>
       </button>
     </div>
   </aside>
+
+  <!-- Mobile Top Navigation Bar -->
+  <div class="mobile-header">
+    <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="mobile-brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M6 12h3.5l1.5-5 2 10 1.5-6.5 1 2.5 1-1h1.5"/></svg>
+      <span>AegisMed</span>
+    </div>
+    <div style="width: 24px;"></div>
+  </div>
+
+  @if (mobileMenuOpen) {
+    <div class="sidebar-overlay" (click)="toggleMobileMenu()"></div>
+  }
 
   <!-- Main Content Area -->
   <main class="main-content">
@@ -129,8 +164,14 @@
       @if (activeMenu === 'overview') {
         <div class="header-section">
           <div class="title-area">
-            <h1>Quality Management Group Dashboard</h1>
-            <p>Standard & Compliance Monitoring across Mayapada Hospital Sites | Data updated: June 2026</p>
+            <div class="title-with-badge">
+              <h1>Quality Management Group Dashboard</h1>
+              <span class="hospital-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ getSelectedSiteName() }}
+              </span>
+            </div>
+            <p>Standard & Compliance Monitoring across Mayapada Hospital Sites | Periode: {{ getSelectedPeriodLabel() }}</p>
           </div>
           <div class="action-area">
             <span class="refresh-indicator">Terakhir diupdate: {{ lastUpdated | date:'HH:mm:ss' }}</span>
@@ -140,6 +181,23 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
               Refresh Data
             </button>
+          </div>
+        </div>
+
+        <!-- Horizontal Date Filter Card (Overview Only) -->
+        <div class="dashboard-filter-card section-card">
+          <div class="filter-card-title">
+            🏢 Periode Analisis Dashboard (Bulan Mulai s.d Selesai)
+          </div>
+          <div class="filter-card-inputs">
+            <div class="filter-field">
+              <label>Dari Bulan:</label>
+              <input type="month" name="filterStartMonth" [(ngModel)]="filterStartMonth" (ngModelChange)="onDashboardDateFilterChange()" class="month-input-dashboard">
+            </div>
+            <div class="filter-field">
+              <label>Sampai Bulan:</label>
+              <input type="month" name="filterEndMonth" [(ngModel)]="filterEndMonth" (ngModelChange)="onDashboardDateFilterChange()" class="month-input-dashboard">
+            </div>
           </div>
         </div>
 
@@ -414,7 +472,13 @@
       @if (activeMenu === 'audits') {
         <div class="header-section">
           <div class="title-area">
-            <h1>Quality Audits Monitoring</h1>
+            <div class="title-with-badge">
+              <h1>Quality Audits Monitoring</h1>
+              <span class="hospital-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ getSelectedSiteName() }}
+              </span>
+            </div>
             <p>Daftar seluruh audit kualitas klinis dan keselamatan yang dilakukan di lingkungan Mayapada Hospitals.</p>
           </div>
         </div>
@@ -460,7 +524,13 @@
       @if (activeMenu === 'capas') {
         <div class="header-section">
           <div class="title-area">
-            <h1>Corrective and Preventive Actions (CAPA)</h1>
+            <div class="title-with-badge">
+              <h1>Corrective and Preventive Actions (CAPA)</h1>
+              <span class="hospital-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ getSelectedSiteName() }}
+              </span>
+            </div>
             <p>Pemantauan komitmen perbaikan insiden keselamatan pasien dan mutu klinis.</p>
           </div>
         </div>
@@ -503,11 +573,21 @@
       @if (activeMenu !== 'overview' && activeMenu !== 'audits' && activeMenu !== 'capas') {
         <div class="header-section">
           <div class="title-area">
-            <h1>⏱️ {{ getEventTimeLabel() }}</h1>
+            <div class="title-with-badge">
+              <h1>⏱️ {{ getEventTimeLabel() }}</h1>
+              <span class="hospital-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ getSelectedSiteName() }}
+              </span>
+            </div>
             <p>{{ getIndicatorTargetText() }} | Pemantauan Waktu Kritis Pelayanan UGD Golden Hour</p>
           </div>
           <div class="action-area">
             <span class="refresh-indicator">Total Kasus: <strong>{{ activeIndicatorSubmissions.length }}</strong> Kasus Terinput</span>
+            <button class="btn-success" (click)="openMobileForm()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Input Kasus
+            </button>
           </div>
         </div>
 
@@ -526,33 +606,93 @@
             <div class="table-wrapper">
               <table class="excel-table">
                 <thead>
-                  <tr>
-                    <th class="col-no">No</th>
-                    <th>No Rekam Medis</th>
-                    <th>Tanggal</th>
-                    <th>Waktu Tiba di IGD</th>
-                    <th>{{ getEventTimeLabel() }}</th>
-                    <th>Selisih Waktu</th>
-                    <th>Target</th>
-                    <th>Keterangan (Jika tidak tercapai)</th>
-                    <!-- Custom Fields Columns -->
-                    @if (activeMenu === 'cardiology') {
-                      <th>ECG Interpreter</th>
-                      <th>Kasus STEMI</th>
-                    } @else if (activeMenu === 'orthopaedics') {
-                      <th>Skor Nyeri (1-10)</th>
-                      <th>Jenis Obat Analgesik</th>
-                    } @else if (activeMenu === 'neurology') {
-                      <th>Waktu Order CT</th>
-                      <th>NIHSS Score</th>
-                    } @else if (activeMenu === 'gastrohepatology') {
-                      <th>Waktu Konsul Spesialis</th>
-                      <th>Diagnosis Utama</th>
-                    } @else if (activeMenu === 'oncology') {
-                      <th>Waktu Demam Terdeteksi</th>
-                      <th>Nama Antibiotik</th>
-                    }
-                  </tr>
+                  @if (activeMenu === 'cardiology') {
+                    <tr>
+                      <th class="col-no">No</th>
+                      <th>No Rekam Medis</th>
+                      <th>Tanggal (dd/mm/yy)</th>
+                      <th>Waktu Tiba di IGD (hh:mm)</th>
+                      <th>Waktu ECG Selesai (hh:mm)</th>
+                      <th>Selisih Waktu (hh:mm)</th>
+                      <th>Target (≤ 10 menit)</th>
+                      <th>Keterangan (Jika Tidak Tercapai)</th>
+                      <th class="col-aksi">Aksi</th>
+                    </tr>
+                  } @else if (activeMenu === 'orthopaedics') {
+                    <tr>
+                      <th class="col-no">No</th>
+                      <th>No Rekam Medis</th>
+                      <th>Diagnosa Medis</th>
+                      <th>Tanggal (dd/mm/yy)</th>
+                      <th>Waktu Tiba di IGD (hh:mm)</th>
+                      <th>Skala Nyeri</th>
+                      <th>Waktu Pemeriksaan Perawat/Dokter (skala nyeri ≥ 4)</th>
+                      <th>Waktu Analgetik Diberikan (hh:mm)</th>
+                      <th>Selisih Waktu (hh:mm)</th>
+                      <th>Target (≤ 30 menit)</th>
+                      <th>Keterangan (Jika Tidak Tercapai)</th>
+                      <th class="col-aksi">Aksi</th>
+                    </tr>
+                  } @else if (activeMenu === 'neurology') {
+                    <tr>
+                      <th class="col-no">No</th>
+                      <th>No Rekam Medis</th>
+                      <th>Diagnosa Medis</th>
+                      <th>Tindakan Radiologi yang Dilakukan</th>
+                      <th>Tanggal (dd/mm/yy)</th>
+                      <th>Waktu Tiba di IGD (hh:mm)</th>
+                      <th>Waktu CT Scan/MRI Diinisiasi (hh:mm)</th>
+                      <th>Selisih Waktu (hh:mm)</th>
+                      <th>Target (≤ 25 menit)</th>
+                      <th>Keterangan (Jika Tidak Tercapai)</th>
+                      <th class="col-aksi">Aksi</th>
+                    </tr>
+                  } @else if (activeMenu === 'gastrohepatology') {
+                    <tr>
+                      <th class="col-no">No</th>
+                      <th>No Rekam Medis</th>
+                      <th>Diagnosa Medis</th>
+                      <th>Tanggal</th>
+                      <th>Pemeriksaan Diagnostik Yang Dilakukan</th>
+                      <th>Waktu Tiba di IGD</th>
+                      <th>Waktu Pemeriksaan Dokter</th>
+                      <th>Waktu Permintaan Pemeriksaan</th>
+                      <th>Waktu Pemeriksaan Diagnostik Dilakukan</th>
+                      <th>Selisih Waktu</th>
+                      <th>Target</th>
+                      <th>Keterangan (Jika tidak tercapai)</th>
+                      <th class="col-aksi">Aksi</th>
+                    </tr>
+                  } @else if (activeMenu === 'oncology') {
+                    <tr>
+                      <th class="col-no">No</th>
+                      <th>No Rekam Medis</th>
+                      <th>Diagnosa Medis</th>
+                      <th>Tanggal (dd/mm/yy)</th>
+                      <th>Jenis Antibiotik</th>
+                      <th>Waktu Tiba di IGD (hh:mm)</th>
+                      <th>Waktu Pemeriksaan Perawat/Dokter (Ditemukan pasien demam dan riwayat kemoterapi)</th>
+                      <th>Waktu Resep Antibiotik IV Dibuat</th>
+                      <th>Waktu Antibiotik Diberikan ke Pasien</th>
+                      <th>Selisih Waktu (hh:mm)</th>
+                      <th>Target (≤ 60 menit)</th>
+                      <th>Keterangan (Jika Tidak Tercapai)</th>
+                      <th class="col-aksi">Aksi</th>
+                    </tr>
+                  } @else if (activeMenu === 'mom-children') {
+                    <tr>
+                      <th class="col-no">No</th>
+                      <th>No Rekam Medis</th>
+                      <th>Kasus Kegawatan/Level Triage</th>
+                      <th>Tanggal (dd/mm/yy)</th>
+                      <th>Waktu Tiba di IGD (hh:mm)</th>
+                      <th>Waktu Bidan Terlatih Tiba di IGD (hh:mm)</th>
+                      <th>Selisih Waktu (hh:mm)</th>
+                      <th>Target (≤ 5 menit)</th>
+                      <th>Keterangan (Jika Tidak Tercapai)</th>
+                      <th class="col-aksi">Aksi</th>
+                    </tr>
+                  }
                 </thead>
                 <tbody>
                   @if (loadingSubmissions) {
@@ -569,47 +709,131 @@
                       </td>
                     </tr>
                   } @else {
-                    @for (sub of activeIndicatorSubmissions; track sub.id; let idx = $index) {
+                    @for (sub of getPaginatedSubmissions(); track sub.id; let idx = $index) {
                       <tr [ngClass]="{'row-non-compliant': !sub.isCompliant}">
-                        <td class="col-no text-center">{{ idx + 1 }}</td>
-                        <td class="highlight text-center">{{ sub.emrNumber }}</td>
-                        <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                        <td class="text-center">{{ sub.doorTime | date:'HH:mm:ss' }}</td>
-                        <td class="text-center">{{ sub.eventTime | date:'HH:mm:ss' }}</td>
-                        <td class="text-center font-bold">
-                          <!-- Convert minutes to HH:MM format if needed, or display as minutes -->
-                          {{ sub.minutesElapsed }} Menit
-                        </td>
-                        <td class="text-center">
-                          <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
-                            {{ sub.isCompliant ? 'Achieved' : 'Not Achieved' }}
-                          </span>
-                        </td>
-                        <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
-                        
-                        <!-- Render Custom Fields dynamically -->
                         @if (getParsedCustomFields(sub.customFieldsJson); as customFields) {
                           @if (activeMenu === 'cardiology') {
-                            <td>{{ customFields.EcgInterpreter || '-' }}</td>
-                            <td class="text-center">
-                              @if (customFields.IsStemi) {
-                                <span class="badge-stemi">STEMI</span>
-                              } @else {
-                                <span>-</span>
-                              }
+                            <!-- Cardiology: No | No RM | Tanggal | Waktu IGD | Waktu ECG | Selisih | Target | Keterangan -->
+                            <td class="col-no text-center">{{ ((currentPage - 1) * pageSize) + idx + 1 }}</td>
+                            <td class="highlight text-center">{{ sub.emrNumber }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'HH:mm' }}</td>
+                            <td class="text-center">{{ sub.eventTime | date:'HH:mm' }}</td>
+                            <td class="text-center font-bold col-yellow-cell">{{ sub.minutesElapsed }} menit</td>
+                            <td class="text-center col-yellow-cell">
+                              <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
+                                {{ sub.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+                              </span>
+                            </td>
+                            <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
+                            <td class="aksi-cell">
+                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
                             </td>
                           } @else if (activeMenu === 'orthopaedics') {
+                            <!-- Orthopaedics: No | No RM | Diagnosa | Tanggal | Waktu IGD | Skala Nyeri | Waktu Periksa | Waktu Analgetik | Selisih | Target | Keterangan -->
+                            <td class="col-no text-center">{{ ((currentPage - 1) * pageSize) + idx + 1 }}</td>
+                            <td class="highlight text-center">{{ sub.emrNumber }}</td>
+                            <td>{{ customFields.MedicalDiagnosis || '-' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'HH:mm' }}</td>
                             <td class="text-center">{{ customFields.PainScore || '-' }}</td>
-                            <td>{{ customFields.AnalgesiaType || '-' }}</td>
+                            <td class="text-center">{{ (customFields.AssessmentTime | date:'HH:mm') || '-' }}</td>
+                            <td class="text-center">{{ sub.eventTime | date:'HH:mm' }}</td>
+                            <td class="text-center font-bold col-yellow-cell">{{ sub.minutesElapsed }} menit</td>
+                            <td class="text-center col-yellow-cell">
+                              <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
+                                {{ sub.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+                              </span>
+                            </td>
+                            <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
+                            <td class="aksi-cell">
+                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                            </td>
                           } @else if (activeMenu === 'neurology') {
-                            <td class="text-center">{{ (customFields.CtOrderTime | date:'HH:mm') || '-' }}</td>
-                            <td class="text-center">{{ customFields.NihssScore !== undefined ? customFields.NihssScore : '-' }}</td>
+                            <!-- Neurology: No | No RM | Diagnosa | Tindakan Radiologi | Tanggal | Waktu IGD | Waktu CT/MRI | Selisih | Target | Keterangan -->
+                            <td class="col-no text-center">{{ ((currentPage - 1) * pageSize) + idx + 1 }}</td>
+                            <td class="highlight text-center">{{ sub.emrNumber }}</td>
+                            <td>{{ customFields.MedicalDiagnosis || '-' }}</td>
+                            <td>{{ customFields.RadiologyAction || '-' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'HH:mm' }}</td>
+                            <td class="text-center">{{ sub.eventTime | date:'HH:mm' }}</td>
+                            <td class="text-center font-bold col-yellow-cell">{{ sub.minutesElapsed }} menit</td>
+                            <td class="text-center col-yellow-cell">
+                              <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
+                                {{ sub.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+                              </span>
+                            </td>
+                            <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
+                            <td class="aksi-cell">
+                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                            </td>
                           } @else if (activeMenu === 'gastrohepatology') {
-                            <td class="text-center">{{ (customFields.ConsultTime | date:'HH:mm') || '-' }}</td>
-                            <td>{{ customFields.PrimaryDiagnosis || '-' }}</td>
+                            <!-- Gastro: No | No RM | Diagnosa | Tanggal | Pemeriksaan | Waktu IGD | Waktu Periksa | Waktu Request | Waktu Diagnostik | Selisih | Target | Keterangan -->
+                            <td class="col-no text-center">{{ ((currentPage - 1) * pageSize) + idx + 1 }}</td>
+                            <td class="highlight text-center">{{ sub.emrNumber }}</td>
+                            <td>{{ customFields.MedicalDiagnosis || '-' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                            <td>{{ customFields.DiagnosticExam || '-' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'HH:mm' }}</td>
+                            <td class="text-center">{{ (customFields.AssessmentTime | date:'HH:mm') || '-' }}</td>
+                            <td class="text-center">{{ (customFields.RequestTime | date:'HH:mm') || '-' }}</td>
+                            <td class="text-center">{{ sub.eventTime | date:'HH:mm' }}</td>
+                            <td class="text-center font-bold col-yellow-cell">{{ sub.minutesElapsed }} menit</td>
+                            <td class="text-center col-yellow-cell">
+                              <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
+                                {{ sub.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+                              </span>
+                            </td>
+                            <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
+                            <td class="aksi-cell">
+                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                            </td>
                           } @else if (activeMenu === 'oncology') {
-                            <td class="text-center">{{ (customFields.FeverTime | date:'HH:mm') || '-' }}</td>
-                            <td>{{ customFields.AntibioticName || '-' }}</td>
+                            <!-- Oncology: No | No RM | Diagnosa | Tanggal | Jenis Antibiotik | Waktu IGD | Waktu Pemeriksaan | Waktu Resep | Waktu Antibiotik | Selisih | Target | Keterangan -->
+                            <td class="col-no text-center">{{ ((currentPage - 1) * pageSize) + idx + 1 }}</td>
+                            <td class="highlight text-center">{{ sub.emrNumber }}</td>
+                            <td>{{ customFields.MedicalDiagnosis || '-' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                            <td>{{ customFields.AntibioticType || '-' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'HH:mm' }}</td>
+                            <td class="text-center">{{ (customFields.AssessmentTime | date:'HH:mm') || '-' }}</td>
+                            <td class="text-center">{{ (customFields.PrescriptionTime | date:'HH:mm') || '-' }}</td>
+                            <td class="text-center">{{ sub.eventTime | date:'HH:mm' }}</td>
+                            <td class="text-center font-bold">{{ sub.minutesElapsed }} menit</td>
+                            <td class="text-center">
+                              <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
+                                {{ sub.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+                              </span>
+                            </td>
+                            <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
+                            <td class="aksi-cell">
+                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                            </td>
+                          } @else if (activeMenu === 'mom-children') {
+                            <!-- Mom & Children: No | No RM | Kasus Kegawatan | Tanggal | Waktu IGD | Waktu Bidan | Selisih | Target | Keterangan -->
+                            <td class="col-no text-center">{{ ((currentPage - 1) * pageSize) + idx + 1 }}</td>
+                            <td class="highlight text-center">{{ sub.emrNumber }}</td>
+                            <td>{{ customFields.TriageLevel || '-' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-center">{{ sub.doorTime | date:'HH:mm' }}</td>
+                            <td class="text-center">{{ sub.eventTime | date:'HH:mm' }}</td>
+                            <td class="text-center font-bold">{{ sub.minutesElapsed }} menit</td>
+                            <td class="text-center">
+                              <span class="compliance-badge" [ngClass]="sub.isCompliant ? 'achieved' : 'not-achieved'">
+                                {{ sub.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+                              </span>
+                            </td>
+                            <td class="notes-cell" [title]="sub.clinicalNotes">{{ sub.clinicalNotes || '-' }}</td>
+                            <td class="aksi-cell">
+                              <button class="btn-aksi btn-edit" (click)="startEdit(sub)" title="Edit">✏️</button>
+                              <button class="btn-aksi btn-delete" (click)="confirmDelete(sub.id)" title="Hapus">🗑️</button>
+                            </td>
                           }
                         }
                       </tr>
@@ -618,10 +842,55 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- Pagination Controls -->
+            @if (activeIndicatorSubmissions.length > 0) {
+              <div class="pagination-controls">
+                <div class="page-size-selector">
+                  <label for="page-size-select">Tampilkan:</label>
+                  <select id="page-size-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="15">15</option>
+                    <option [ngValue]="20">20</option>
+                  </select>
+                  <span>baris</span>
+                </div>
+
+                <div class="pagination-navigation">
+                  <button type="button" class="btn-pagination" [disabled]="currentPage === 1" (click)="setPage(currentPage - 1)">
+                    &lsaquo; Prev
+                  </button>
+                  
+                  <div class="pagination-pages">
+                    @for (page of getPageNumbers(); track page) {
+                      <button type="button" 
+                              class="btn-page-num" 
+                              [class.active]="currentPage === page" 
+                              (click)="setPage(page)">
+                        {{ page }}
+                      </button>
+                    }
+                  </div>
+                  
+                  <button type="button" class="btn-pagination" [disabled]="currentPage === getTotalPages()" (click)="setPage(currentPage + 1)">
+                    Next &rsaquo;
+                  </button>
+                  
+                  <span class="pagination-info-total">
+                    ({{ activeIndicatorSubmissions.length }} kasus)
+                  </span>
+                </div>
+              </div>
+            }
           </div>
 
           <!-- Right Column: Quick Data Input (Green header, spreadsheet matching) -->
-          <div class="quick-input-container">
+          <div class="quick-input-container" [class.mobile-modal-open]="mobileFormOpen">
+            <!-- Close button for mobile modal -->
+            <button type="button" class="mobile-form-close-btn" (click)="closeMobileForm()" aria-label="Close Form">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             <div class="input-card">
               <div class="input-card-header">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -639,60 +908,92 @@
 
                 <!-- Green Inputs Section -->
                 <div class="green-inputs-group">
-                  <div class="form-group-excel">
-                    <label>Hospital Site <span class="required">*</span></label>
-                    <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
-                      @for (site of data.siteCompliance; track site.siteName) {
-                        <option [value]="site.siteId">{{ site.siteName }}</option>
-                      }
-                    </select>
-                  </div>
-
-                  <div class="form-group-excel">
-                    <label>No Rekam Medis <span class="required">*</span></label>
-                    <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
-                  </div>
-
-                  <div class="form-group-excel">
-                    <label>Inisial Pasien</label>
-                    <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
-                  </div>
-
-                  <div class="form-group-excel">
-                    <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
-                    <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
-                  </div>
-
-                  <div class="form-group-excel">
-                    <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
-                    <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
-                  </div>
-
-                  <div class="form-group-excel">
-                    <label>{{ getEventTimeLabel() }} (hh:mm) <span class="required">*</span></label>
-                    <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
-                  </div>
-
-                  <!-- ==================== INDICATOR SPECIFIC CUSTOM QUESTIONS (GREEN INPUTS) ==================== -->
-                  
-                  <!-- CARDIOLOGY specific questions -->
-                  @if (activeMenu === 'cardiology') {
-                    <div class="form-group-excel highlight-field">
-                      <label>Dokter Pembaca / Interpreter ECG</label>
-                      <input type="text" name="ecgInterpreter" [(ngModel)]="ecgInterpreter" placeholder="Nama Dokter Sp.JP">
+                  @if (activeMenu === 'gastrohepatology') {
+                    <!-- GASTROHEPATOLOGY: Site > No RM > Inisial > Diagnosa > Tanggal > Pemeriksaan > Waktu IGD > Waktu Periksa > Waktu Request > Waktu Diagnostik -->
+                    <div class="form-group-excel">
+                      <label>Hospital Site <span class="required">*</span></label>
+                      <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
+                        @for (site of data.siteCompliance; track site.siteName) {
+                          <option [value]="site.siteId">{{ site.siteName }}</option>
+                        }
+                      </select>
                     </div>
-                    <div class="form-group-excel checkbox-group">
-                      <label class="checkbox-label">
-                        <input type="checkbox" name="isStemi" [(ngModel)]="isStemi">
-                        <span>Kasus STEMI (ST-Elevation)</span>
-                      </label>
+                    <div class="form-group-excel">
+                      <label>No Rekam Medis <span class="required">*</span></label>
+                      <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
                     </div>
-                  }
-
-                  <!-- ORTHOPAEDICS default specific questions -->
-                  @if (activeMenu === 'orthopaedics') {
+                    <div class="form-group-excel">
+                      <label>Inisial Pasien</label>
+                      <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
+                    </div>
                     <div class="form-group-excel highlight-field">
-                      <label>Skor Nyeri Pasien (1 - 10)</label>
+                      <label>Diagnosa Medis <span class="required">*</span></label>
+                      <input type="text" name="medicalDiagnosis" [(ngModel)]="medicalDiagnosis" placeholder="Contoh: Perdarahan SCBA" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
+                      <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Pemeriksaan Diagnostik Yang Dilakukan <span class="required">*</span></label>
+                      <select name="diagnosticExam" [(ngModel)]="diagnosticExam" required>
+                        <option value="" disabled selected>Pilih Pemeriksaan...</option>
+                        <option value="Endoskopi (EGD/Kolonoskopi)">Endoskopi (EGD/Kolonoskopi)</option>
+                        <option value="USG Abdomen">USG Abdomen</option>
+                        <option value="CT Scan Abdomen">CT Scan Abdomen</option>
+                        <option value="Rontgen Abdomen 3 Posisi">Rontgen Abdomen 3 Posisi</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Waktu Pemeriksaan Perawat/Dokter (hh:mm)</label>
+                      <input type="time" name="assessmentTimeOnly" [(ngModel)]="assessmentTimeOnly">
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Waktu Permintaan Pemeriksaan Diagnostik Dibuat (hh:mm)</label>
+                      <input type="time" name="requestTimeOnly" [(ngModel)]="requestTimeOnly">
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Pemeriksaan Diagnostik Dilakukan (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
+                    </div>
+
+                  } @else if (activeMenu === 'orthopaedics') {
+                    <!-- ORTHOPAEDICS: Site > No RM > Inisial > Diagnosa > Tanggal > Waktu IGD > Skala Nyeri > Waktu Periksa > Waktu Analgetik -->
+                    <div class="form-group-excel">
+                      <label>Hospital Site <span class="required">*</span></label>
+                      <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
+                        @for (site of data.siteCompliance; track site.siteName) {
+                          <option [value]="site.siteId">{{ site.siteName }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>No Rekam Medis <span class="required">*</span></label>
+                      <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Inisial Pasien</label>
+                      <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Diagnosa Medis <span class="required">*</span></label>
+                      <input type="text" name="medicalDiagnosis" [(ngModel)]="medicalDiagnosis" placeholder="Contoh: Closed Fracture Femur" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
+                      <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Skala Nyeri Pasien (1 - 10)</label>
                       <select name="painScore" [(ngModel)]="painScore">
                         @for (score of [1,2,3,4,5,6,7,8,9,10]; track score) {
                           <option [value]="score">{{ score }} - {{ score >= 8 ? 'Nyeri Hebat' : score >= 4 ? 'Sedang' : 'Ringan' }}</option>
@@ -700,44 +1001,171 @@
                       </select>
                     </div>
                     <div class="form-group-excel highlight-field">
-                      <label>Jenis Obat Analgesik Diberikan</label>
-                      <input type="text" name="analgesiaType" [(ngModel)]="analgesiaType" placeholder="Contoh: Ketorolac 30mg IV">
+                      <label>Waktu Pemeriksaan Perawat/Dokter (hh:mm)</label>
+                      <input type="time" name="assessmentTimeOnly" [(ngModel)]="assessmentTimeOnly">
                     </div>
-                  }
+                    <div class="form-group-excel">
+                      <label>Waktu Analgetik Diberikan (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
+                    </div>
 
-                  <!-- NEUROLOGY default specific questions -->
-                  @if (activeMenu === 'neurology') {
-                    <div class="form-group-excel highlight-field">
-                      <label>Waktu Order CT Scan (hh:mm)</label>
-                      <input type="time" name="ctOrderTimeOnly" [(ngModel)]="ctOrderTimeOnly">
+                  } @else if (activeMenu === 'neurology') {
+                    <!-- NEUROLOGY: Site > No RM > Inisial > Diagnosa > Tindakan Radiologi > Tanggal > Waktu IGD > Waktu CT/MRI -->
+                    <div class="form-group-excel">
+                      <label>Hospital Site <span class="required">*</span></label>
+                      <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
+                        @for (site of data.siteCompliance; track site.siteName) {
+                          <option [value]="site.siteId">{{ site.siteName }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>No Rekam Medis <span class="required">*</span></label>
+                      <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Inisial Pasien</label>
+                      <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
                     </div>
                     <div class="form-group-excel highlight-field">
-                      <label>Skor Stroke NIHSS (0 - 42)</label>
-                      <input type="number" name="nihssScore" [(ngModel)]="nihssScore" min="0" max="42">
+                      <label>Diagnosa Medis <span class="required">*</span></label>
+                      <input type="text" name="medicalDiagnosis" [(ngModel)]="medicalDiagnosis" placeholder="Contoh: Stroke Iskemik Akut" required>
                     </div>
-                  }
+                    <div class="form-group-excel highlight-field">
+                      <label>Tindakan Radiologi <span class="required">*</span></label>
+                      <select name="radiologyAction" [(ngModel)]="radiologyAction" required>
+                        <option value="" disabled selected>Pilih Tindakan...</option>
+                        <option value="CT Scan Kepala Non-Kontras">CT Scan Kepala Non-Kontras</option>
+                        <option value="CT Scan Kepala dengan Kontras">CT Scan Kepala dengan Kontras</option>
+                        <option value="CT Angiografi">CT Angiografi</option>
+                        <option value="MRI Kepala">MRI Kepala</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
+                      <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu CT Scan/MRI Diinisiasi (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
+                    </div>
 
-                  <!-- GASTROHEPATOLOGY default specific questions -->
-                  @if (activeMenu === 'gastrohepatology') {
-                    <div class="form-group-excel highlight-field">
-                      <label>Waktu Konsul Dokter Spesialis (hh:mm)</label>
-                      <input type="time" name="consultTimeOnly" [(ngModel)]="consultTimeOnly">
+                  } @else if (activeMenu === 'oncology') {
+                    <!-- ONCOLOGY: Site > No RM > Inisial > Diagnosa > Tanggal > Jenis Antibiotik > Waktu IGD > Waktu Periksa > Waktu Resep > Waktu Antibiotik -->
+                    <div class="form-group-excel">
+                      <label>Hospital Site <span class="required">*</span></label>
+                      <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
+                        @for (site of data.siteCompliance; track site.siteName) {
+                          <option [value]="site.siteId">{{ site.siteName }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>No Rekam Medis <span class="required">*</span></label>
+                      <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Inisial Pasien</label>
+                      <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
                     </div>
                     <div class="form-group-excel highlight-field">
-                      <label>Diagnosis Utama Awal</label>
-                      <input type="text" name="primaryDiagnosis" [(ngModel)]="primaryDiagnosis" placeholder="Contoh: Apendistis Akut">
+                      <label>Diagnosa Medis <span class="required">*</span></label>
+                      <input type="text" name="medicalDiagnosis" [(ngModel)]="medicalDiagnosis" placeholder="Contoh: Kanker Payudara dengan Kemoterapi">
                     </div>
-                  }
-
-                  <!-- ONCOLOGY default specific questions -->
-                  @if (activeMenu === 'oncology') {
-                    <div class="form-group-excel highlight-field">
-                      <label>Waktu Demam Terdeteksi (hh:mm)</label>
-                      <input type="time" name="feverTimeOnly" [(ngModel)]="feverTimeOnly">
+                    <div class="form-group-excel">
+                      <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
+                      <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
                     </div>
                     <div class="form-group-excel highlight-field">
-                      <label>Nama Obat Antibiotik</label>
+                      <label>Jenis Antibiotik</label>
                       <input type="text" name="antibioticName" [(ngModel)]="antibioticName" placeholder="Contoh: Meropenem IV">
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Waktu Pemeriksaan Perawat/Dokter (hh:mm)</label>
+                      <input type="time" name="assessmentTimeOnly" [(ngModel)]="assessmentTimeOnly">
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Waktu Resep Antibiotik IV Dibuat (hh:mm)</label>
+                      <input type="time" name="prescriptionTimeOnly" [(ngModel)]="prescriptionTimeOnly">
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Antibiotik Diberikan ke Pasien (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
+                    </div>
+
+                  } @else if (activeMenu === 'mom-children') {
+                    <!-- MOM & CHILDREN: Site > No RM > Inisial > Kasus Kegawatan > Tanggal > Waktu IGD > Waktu Bidan -->
+                    <div class="form-group-excel">
+                      <label>Hospital Site <span class="required">*</span></label>
+                      <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
+                        @for (site of data.siteCompliance; track site.siteName) {
+                          <option [value]="site.siteId">{{ site.siteName }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>No Rekam Medis <span class="required">*</span></label>
+                      <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Inisial Pasien</label>
+                      <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
+                    </div>
+                    <div class="form-group-excel highlight-field">
+                      <label>Kasus Kegawatan/Level Triage</label>
+                      <input type="text" name="triageLevel" [(ngModel)]="triageLevel" placeholder="Contoh: P1 / Kritis / Obstetri Emergensi">
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
+                      <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Bidan Terlatih Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
+                    </div>
+
+                  } @else {
+                    <!-- CARDIOLOGY (and default): Site > No RM > Inisial > Tanggal > Waktu IGD > Waktu ECG -->
+                    <div class="form-group-excel">
+                      <label>Hospital Site <span class="required">*</span></label>
+                      <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required>
+                        @for (site of data.siteCompliance; track site.siteName) {
+                          <option [value]="site.siteId">{{ site.siteName }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>No Rekam Medis <span class="required">*</span></label>
+                      <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Masukan No RM" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Inisial Pasien</label>
+                      <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Inisial (opsional)">
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Tanggal (dd/mm/yyyy) <span class="required">*</span></label>
+                      <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>Waktu Tiba di IGD (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required>
+                    </div>
+                    <div class="form-group-excel">
+                      <label>{{ getEventTimeLabel() }} (hh:mm) <span class="required">*</span></label>
+                      <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required>
                     </div>
                   }
 
@@ -785,9 +1213,297 @@
               </form>
             </div>
           </div>
+          
+          <!-- Floating Action Button (Mobile Only) -->
+          <button type="button" class="mobile-fab" (click)="openMobileForm()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Input Kasus</span>
+          </button>
         </div>
       }
 
     }
+
   </main>
+
+  <!-- ═══════════════ DELETE CONFIRMATION MODAL ═══════════════ -->
+  @if (showDeleteConfirm) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-icon modal-icon-danger">🗑️</div>
+        <h3 class="modal-title">Hapus Data?</h3>
+        <p class="modal-desc">Data ini akan dihapus permanen dan tidak bisa dikembalikan.</p>
+        <div class="modal-actions">
+          <button class="btn-modal-cancel" (click)="cancelDelete()" [disabled]="deleting">Batal</button>
+          <button class="btn-modal-danger" (click)="executeDelete()" [disabled]="deleting">
+            {{ deleting ? 'Menghapus...' : 'Ya, Hapus' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════ EDIT MODAL ═══════════════ -->
+  @if (data && editingSubmission) {
+    <div class="modal-overlay" (click)="cancelEdit()">
+      <div class="modal-card-excel" style="max-height: 90vh; overflow-y: auto;" (click)="$event.stopPropagation()">
+        
+        <div class="input-card">
+          <div class="input-card-header" style="background: linear-gradient(135deg, #10b981, #059669); justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              <span>EDIT DATA KASUS UGD</span>
+            </div>
+            <button (click)="cancelEdit()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px 8px; font-weight: bold;">✕</button>
+          </div>
+
+          <form (submit)="saveEdit()" class="excel-form">
+            <!-- Alerts -->
+            @if (updateError) {
+              <div class="alert alert-danger" style="margin-bottom: 12px;">Gagal menyimpan perubahan. Silakan coba lagi.</div>
+            }
+
+            <!-- Inputs Section (Vertical layout matching the input form) -->
+            <div class="green-inputs-group">
+              
+              <!-- 1. HOSPITAL SITE -->
+              <div class="form-group-excel">
+                <label>HOSPITAL SITE <span class="required">*</span></label>
+                <select name="hospitalSiteId" [(ngModel)]="editingSubmission.hospitalSiteId" required>
+                  @for (site of data.siteCompliance; track site.siteName) {
+                    <option [value]="site.siteId">{{ site.siteName }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- 2. NO REKAM MEDIS -->
+              <div class="form-group-excel">
+                <label>NO REKAM MEDIS <span class="required">*</span></label>
+                <input type="text" name="emrNumber" [(ngModel)]="editingSubmission.emrNumber" required>
+              </div>
+
+              <!-- 3. INISIAL PASIEN -->
+              <div class="form-group-excel">
+                <label>INISIAL PASIEN</label>
+                <input type="text" name="patientInitials" [(ngModel)]="editingSubmission.patientInitials">
+              </div>
+
+              <!-- GASTROHEPATOLOGY fields -->
+              @if (activeMenu === 'gastrohepatology') {
+                <div class="form-group-excel highlight-field">
+                  <label>DIAGNOSA MEDIS <span class="required">*</span></label>
+                  <input type="text" name="medicalDiagnosis" [(ngModel)]="editingSubmission._custom.MedicalDiagnosis" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>TANGGAL (DD/MM/YYYY) <span class="required">*</span></label>
+                  <input type="date" name="caseDate" [(ngModel)]="editingSubmission._caseDate" required>
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>PEMERIKSAAN DIAGNOSTIK YANG DILAKUKAN <span class="required">*</span></label>
+                  <select name="diagnosticExam" [(ngModel)]="editingSubmission._custom.DiagnosticExam" required>
+                    <option value="Endoskopi (EGD/Kolonoskopi)">Endoskopi (EGD/Kolonoskopi)</option>
+                    <option value="USG Abdomen">USG Abdomen</option>
+                    <option value="CT Scan Abdomen">CT Scan Abdomen</option>
+                    <option value="Rontgen Abdomen 3 Posisi">Rontgen Abdomen 3 Posisi</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU TIBA DI IGD (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="doorTimeOnly" [(ngModel)]="editingSubmission._doorTime" required>
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>WAKTU PEMERIKSAAN PERAWAT/DOKTER (HH:MM)</label>
+                  <input type="time" name="assessmentTimeOnly" [(ngModel)]="editingSubmission._custom._assessmentTimeOnly">
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>WAKTU PERMINTAAN PEMERIKSAAN DIAGNOSTIK DIBUAT (HH:MM)</label>
+                  <input type="time" name="requestTimeOnly" [(ngModel)]="editingSubmission._custom._requestTimeOnly">
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU PEMERIKSAAN DIAGNOSTIK DILAKUKAN (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="eventTimeOnly" [(ngModel)]="editingSubmission._eventTime" required>
+                </div>
+              }
+
+              <!-- ORTHOPAEDICS fields -->
+              @if (activeMenu === 'orthopaedics') {
+                <div class="form-group-excel highlight-field">
+                  <label>DIAGNOSA MEDIS <span class="required">*</span></label>
+                  <input type="text" name="medicalDiagnosis" [(ngModel)]="editingSubmission._custom.MedicalDiagnosis" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>TANGGAL (DD/MM/YYYY) <span class="required">*</span></label>
+                  <input type="date" name="caseDate" [(ngModel)]="editingSubmission._caseDate" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU TIBA DI IGD (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="doorTimeOnly" [(ngModel)]="editingSubmission._doorTime" required>
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>SKALA NYERI PASIEN (1 - 10)</label>
+                  <select name="painScore" [(ngModel)]="editingSubmission._custom.PainScore">
+                    @for (score of [1,2,3,4,5,6,7,8,9,10]; track score) {
+                      <option [value]="score">{{ score }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>WAKTU PEMERIKSAAN PERAWAT/DOKTER (HH:MM)</label>
+                  <input type="time" name="assessmentTimeOnly" [(ngModel)]="editingSubmission._custom._assessmentTimeOnly">
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU ANALGETIK DIBERIKAN (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="eventTimeOnly" [(ngModel)]="editingSubmission._eventTime" required>
+                </div>
+              }
+
+              <!-- NEUROLOGY fields -->
+              @if (activeMenu === 'neurology') {
+                <div class="form-group-excel highlight-field">
+                  <label>DIAGNOSA MEDIS <span class="required">*</span></label>
+                  <input type="text" name="medicalDiagnosis" [(ngModel)]="editingSubmission._custom.MedicalDiagnosis" required>
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>TINDAKAN RADIOLOGI <span class="required">*</span></label>
+                  <select name="radiologyAction" [(ngModel)]="editingSubmission._custom.RadiologyAction" required>
+                    <option value="CT Scan Kepala Non-Kontras">CT Scan Kepala Non-Kontras</option>
+                    <option value="CT Scan Kepala dengan Kontras">CT Scan Kepala dengan Kontras</option>
+                    <option value="CT Angiografi">CT Angiografi</option>
+                    <option value="MRI Kepala">MRI Kepala</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+                <div class="form-group-excel">
+                  <label>TANGGAL (DD/MM/YYYY) <span class="required">*</span></label>
+                  <input type="date" name="caseDate" [(ngModel)]="editingSubmission._caseDate" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU TIBA DI IGD (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="doorTimeOnly" [(ngModel)]="editingSubmission._doorTime" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU CT SCAN/MRI DIINISIASI (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="eventTimeOnly" [(ngModel)]="editingSubmission._eventTime" required>
+                </div>
+              }
+
+              <!-- ONCOLOGY fields -->
+              @if (activeMenu === 'oncology') {
+                <div class="form-group-excel highlight-field">
+                  <label>DIAGNOSA MEDIS <span class="required">*</span></label>
+                  <input type="text" name="medicalDiagnosis" [(ngModel)]="editingSubmission._custom.MedicalDiagnosis" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>TANGGAL (DD/MM/YYYY) <span class="required">*</span></label>
+                  <input type="date" name="caseDate" [(ngModel)]="editingSubmission._caseDate" required>
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>JENIS ANTIBIOTIK</label>
+                  <input type="text" name="antibioticName" [(ngModel)]="editingSubmission._custom.AntibioticType">
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU TIBA DI IGD (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="doorTimeOnly" [(ngModel)]="editingSubmission._doorTime" required>
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>WAKTU PEMERIKSAAN PERAWAT/DOKTER (HH:MM)</label>
+                  <input type="time" name="assessmentTimeOnly" [(ngModel)]="editingSubmission._custom._assessmentTimeOnly">
+                </div>
+                <div class="form-group-excel highlight-field">
+                  <label>WAKTU RESEP ANTIBIOTIK IV DIBUAT (HH:MM)</label>
+                  <input type="time" name="prescriptionTimeOnly" [(ngModel)]="editingSubmission._custom._prescriptionTimeOnly">
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU ANTIBIOTIK DIBERIKAN KE PASIEN (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="eventTimeOnly" [(ngModel)]="editingSubmission._eventTime" required>
+                </div>
+              }
+
+              <!-- MOM & CHILDREN fields -->
+              @if (activeMenu === 'mom-children') {
+                <div class="form-group-excel highlight-field">
+                  <label>KASUS KEGAWATAN/LEVEL TRIAGE</label>
+                  <input type="text" name="triageLevel" [(ngModel)]="editingSubmission._custom.TriageLevel">
+                </div>
+                <div class="form-group-excel">
+                  <label>TANGGAL (DD/MM/YYYY) <span class="required">*</span></label>
+                  <input type="date" name="caseDate" [(ngModel)]="editingSubmission._caseDate" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU TIBA DI IGD (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="doorTimeOnly" [(ngModel)]="editingSubmission._doorTime" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU BIDAN TERLATIH TIBA DI IGD (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="eventTimeOnly" [(ngModel)]="editingSubmission._eventTime" required>
+                </div>
+              }
+
+              <!-- CARDIOLOGY (and default) fields -->
+              @if (activeMenu !== 'gastrohepatology' && activeMenu !== 'orthopaedics' && activeMenu !== 'neurology' && activeMenu !== 'oncology' && activeMenu !== 'mom-children') {
+                <div class="form-group-excel">
+                  <label>TANGGAL (DD/MM/YYYY) <span class="required">*</span></label>
+                  <input type="date" name="caseDate" [(ngModel)]="editingSubmission._caseDate" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>WAKTU TIBA DI IGD (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="doorTimeOnly" [(ngModel)]="editingSubmission._doorTime" required>
+                </div>
+                <div class="form-group-excel">
+                  <label>{{ getEventTimeLabel() | uppercase }} (HH:MM) <span class="required">*</span></label>
+                  <input type="time" name="eventTimeOnly" [(ngModel)]="editingSubmission._eventTime" required>
+                </div>
+              }
+
+              <!-- Keterangan -->
+              <div class="form-group-excel">
+                <label>
+                  KETERANGAN / CATATAN KLINIS
+                  <span class="required" *ngIf="getEditPreviewMinutes() !== null && !getEditPreviewCompliant()">* (Wajib jika target terlewati)</span>
+                </label>
+                <textarea name="clinicalNotes" [(ngModel)]="editingSubmission.clinicalNotes" rows="2" 
+                          [placeholder]="getEditPreviewMinutes() !== null && !getEditPreviewCompliant() ? 'Wajib isi alasan keterlambatan tindakan di sini...' : 'Masukkan keterangan klinis / catatan tambahan'"></textarea>
+              </div>
+
+            </div>
+
+            <!-- Yellow Calculated Formula Section (Matching input form) -->
+            <div class="yellow-formulas-group" style="margin-top: 15px;">
+              <div class="formula-title">FORMULA (Dihitung Otomatis)</div>
+              
+              <div class="formula-row">
+                <span class="formula-label">Selisih Waktu:</span>
+                <span class="formula-val">
+                  {{ getEditPreviewMinutes() !== null ? (getEditPreviewMinutes() + ' Menit') : '-- : --' }}
+                </span>
+              </div>
+
+              <div class="formula-row">
+                <span class="formula-label">Target Kepatuhan:</span>
+                <span class="formula-val">
+                  @if (getEditPreviewMinutes() === null) {
+                    --
+                  } @else {
+                    <span class="badge" [ngClass]="getEditPreviewCompliant() ? 'completed' : 'overdue'">
+                      {{ getEditPreviewCompliant() ? 'Achieved' : 'Not Achieved' }}
+                    </span>
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div class="input-card-footer" style="display: flex; gap: 12px; justify-content: flex-end; padding: 14px 18px;">
+              <button type="button" class="btn-modal-cancel" (click)="cancelEdit()" [disabled]="updating" style="margin: 0;">Batal</button>
+              <button type="submit" class="btn-save" [disabled]="updating" style="margin: 0; padding: 9px 24px;">
+                {{ updating ? 'Menyimpan...' : 'Simpan Perubahan' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  }
+
 </div>

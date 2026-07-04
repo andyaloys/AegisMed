@@ -1,17 +1,43 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: aegismed-mysql
+  db:
+    image: postgres:15-alpine
+    container_name: aegismed-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: P@ssw0rd
-      MYSQL_DATABASE: aegismed_qms
+      POSTGRES_DB: aegismed_qms_pg
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: P@ssw0rd
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aegismed-backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=aegismed_qms_pg;Username=postgres;Password=P@ssw0rd;
+      - ASPNETCORE_ENVIRONMENT=Production
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aegismed-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
 
 volumes:
-  mysql_data:
+  postgres_data:

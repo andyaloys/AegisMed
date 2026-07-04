@@ -95,20 +95,27 @@ export class DashboardService {
 
   constructor(private http: HttpClient) { }
 
-  getDashboardData(siteId?: string): Observable<DashboardData> {
+  getDashboardData(siteId?: string, startDate?: string, endDate?: string): Observable<DashboardData> {
     let url = this.getApiUrl('dashboard');
-    if (siteId) {
-      url += `?siteId=${siteId}`;
+    const params: string[] = [];
+    if (siteId) params.push(`siteId=${siteId}`);
+    if (startDate) params.push(`startDate=${startDate}`);
+    if (endDate) params.push(`endDate=${endDate}`);
+    
+    if (params.length > 0) {
+      url += '?' + params.join('&');
     }
     return this.http.get<DashboardData>(url);
   }
 
-  getEdSubmissions(siteId?: string, month?: string, indicatorId?: string): Observable<any[]> {
+  getEdSubmissions(siteId?: string, month?: string, indicatorId?: string, startDate?: string, endDate?: string): Observable<any[]> {
     let url = this.getApiUrl('edsubmissions');
     const params: string[] = [];
     if (siteId) params.push(`siteId=${siteId}`);
     if (month) params.push(`month=${month}`);
     if (indicatorId) params.push(`indicatorId=${indicatorId}`);
+    if (startDate) params.push(`startDate=${startDate}`);
+    if (endDate) params.push(`endDate=${endDate}`);
     
     if (params.length > 0) {
       url += '?' + params.join('&');
@@ -118,5 +125,13 @@ export class DashboardService {
 
   submitEdCase(caseData: any): Observable<any> {
     return this.http.post<any>(this.getApiUrl('edsubmissions'), caseData);
+  }
+
+  updateEdCase(id: string, caseData: any): Observable<any> {
+    return this.http.put<any>(this.getApiUrl(`edsubmissions/${id}`), caseData);
+  }
+
+  deleteEdCase(id: string): Observable<any> {
+    return this.http.delete<any>(this.getApiUrl(`edsubmissions/${id}`));
   }
 }

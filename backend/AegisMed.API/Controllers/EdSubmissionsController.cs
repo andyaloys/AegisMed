@@ -19,26 +19,31 @@ public class EdSubmissionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetSubmissions([FromQuery] Guid? siteId, [FromQuery] string? month, [FromQuery] Guid? indicatorId)
+    public async Task<IActionResult> GetSubmissions(
+        [FromQuery] Guid? siteId, 
+        [FromQuery] string? month, 
+        [FromQuery] Guid? indicatorId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate)
     {
         var query = _context.EdCaseSubmissions.Include(e => e.HospitalSite).AsQueryable();
 
         if (siteId.HasValue)
-        {
             query = query.Where(e => e.HospitalSiteId == siteId.Value);
-        }
 
-        if (!string.IsNullOrEmpty(month))
-        {
+        if (startDate.HasValue)
+            query = query.Where(e => e.DoorTime >= startDate.Value.Date);
+
+        if (endDate.HasValue)
+            query = query.Where(e => e.DoorTime <= endDate.Value.Date.AddDays(1).AddTicks(-1));
+
+        if (!startDate.HasValue && !endDate.HasValue && !string.IsNullOrEmpty(month))
             query = query.Where(e => e.SubmissionMonth == month);
-        }
 
         if (indicatorId.HasValue)
-        {
             query = query.Where(e => e.EdIndicatorId == indicatorId.Value);
-        }
 
-        var list = await query.OrderByDescending(e => e.CreatedDate).ToListAsync();
+        var list = await query.OrderByDescending(e => e.DoorTime).ToListAsync();
         return Ok(list);
     }
 
@@ -46,27 +51,17 @@ public class EdSubmissionsController : ControllerBase
     public async Task<IActionResult> CreateSubmission([FromBody] CreateEdSubmissionDto dto)
     {
         if (dto.EventTime < dto.DoorTime)
-        {
             return BadRequest("Waktu tindakan tidak boleh lebih awal dari waktu kedatangan (Door Time).");
-        }
 
         var siteExists = await _context.HospitalSites.AnyAsync(s => s.Id == dto.HospitalSiteId);
         if (!siteExists)
-        {
             return BadRequest("Rumah sakit (site) tidak valid.");
-        }
 
         var indicator = await _context.EdIndicators.FindAsync(dto.EdIndicatorId);
         if (indicator == null)
-        {
             return BadRequest("Indikator tidak valid.");
-        }
 
-        // Calculate minutes elapsed
-        double minutes = (dto.EventTime - dto.DoorTime).TotalMinutes;
-        minutes = Math.Round(minutes, 1);
-
-        // Determine compliance status based on database target minutes dynamically
+        double minutes = Math.Round((dto.EventTime - dto.DoorTime).TotalMinutes, 1);
         bool isCompliant = minutes <= indicator.TargetMinutes;
 
         var submission = new EdCaseSubmission
@@ -88,8 +83,50 @@ public class EdSubmissionsController : ControllerBase
 
         _context.EdCaseSubmissions.Add(submission);
         await _context.SaveChangesAsync();
-
         return Ok(submission);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateSubmission(Guid id, [FromBody] CreateEdSubmissionDto dto)
+    {
+        var submission = await _context.EdCaseSubmissions.FindAsync(id);
+        if (submission == null)
+            return NotFound("Data tidak ditemukan.");
+
+        if (dto.EventTime < dto.DoorTime)
+            return BadRequest("Waktu tindakan tidak boleh lebih awal dari waktu kedatangan.");
+
+        var indicator = await _context.EdIndicators.FindAsync(submission.EdIndicatorId);
+        if (indicator == null)
+            return BadRequest("Indikator tidak valid.");
+
+        double minutes = Math.Round((dto.EventTime - dto.DoorTime).TotalMinutes, 1);
+        bool isCompliant = minutes <= indicator.TargetMinutes;
+
+        submission.EmrNumber = dto.EmrNumber;
+        submission.PatientInitials = dto.PatientInitials;
+        submission.DoorTime = dto.DoorTime;
+        submission.EventTime = dto.EventTime;
+        submission.MinutesElapsed = minutes;
+        submission.IsCompliant = isCompliant;
+        submission.ClinicalNotes = dto.ClinicalNotes ?? string.Empty;
+        submission.CustomFieldsJson = dto.CustomFieldsJson ?? "{}";
+        submission.HospitalSiteId = dto.HospitalSiteId;
+
+        await _context.SaveChangesAsync();
+        return Ok(submission);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteSubmission(Guid id)
+    {
+        var submission = await _context.EdCaseSubmissions.FindAsync(id);
+        if (submission == null)
+            return NotFound("Data tidak ditemukan.");
+
+        _context.EdCaseSubmissions.Remove(submission);
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Data berhasil dihapus." });
     }
 }
 
@@ -98,7 +135,7 @@ public class CreateEdSubmissionDto
     public Guid HospitalSiteId { get; set; }
     public string EmrNumber { get; set; } = string.Empty;
     public string PatientInitials { get; set; } = string.Empty;
-    public string SubmissionMonth { get; set; } = string.Empty; // Format: "YYYY-MM"
+    public string SubmissionMonth { get; set; } = string.Empty;
     public Guid EdIndicatorId { get; set; }
     public DateTime DoorTime { get; set; }
     public DateTime EventTime { get; set; }
