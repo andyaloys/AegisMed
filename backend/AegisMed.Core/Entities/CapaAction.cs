@@ -35,4 +35,8 @@ public class CapaAction
     public string CorrectiveAction { get; set; } = string.Empty;
     public string PreventiveAction { get; set; } = string.Empty;
     public string ActionPlan { get; set; } = string.Empty;
+
+    public Guid? EdIndicatorId { get; set; }
+    public EdIndicator? EdIndicator { get; set; }
+    public string? SubmissionMonth { get; set; }
 }

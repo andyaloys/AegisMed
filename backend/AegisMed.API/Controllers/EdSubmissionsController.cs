@@ -3,6 +3,7 @@ using AegisMed.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AegisMed.API.Controllers;
@@ -44,13 +45,39 @@ public class EdSubmissionsController : ControllerBase
             query = query.Where(e => e.EdIndicatorId == indicatorId.Value);
 
         var list = await query.OrderByDescending(e => e.DoorTime).ToListAsync();
-        return Ok(list);
+        
+        // Fetch closed periods to determine locking status on the fly
+        var distinctClosedPeriods = await _context.ClosedPeriods
+            .Select(cp => new { cp.HospitalSiteId, cp.Month })
+            .Distinct()
+            .ToListAsync();
+
+        var result = list.Select(e => new {
+            e.Id,
+            e.EmrNumber,
+            e.PatientInitials,
+            e.SubmissionMonth,
+            e.EdIndicatorId,
+            e.DoorTime,
+            e.EventTime,
+            e.MinutesElapsed,
+            e.IsCompliant,
+            e.ClinicalNotes,
+            e.CustomFieldsJson,
+            e.HospitalSiteId,
+            IsClosed = distinctClosedPeriods.Any(cp => cp.HospitalSiteId == e.HospitalSiteId && cp.Month == e.SubmissionMonth)
+        });
+
+        return Ok(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateSubmission([FromBody] CreateEdSubmissionDto dto)
     {
-        var isLocked = await _context.EdCaseSubmissions.AnyAsync(s => s.HospitalSiteId == dto.HospitalSiteId && s.SubmissionMonth == dto.SubmissionMonth && s.IsClosed);
+        var isLocked = await _context.ClosedPeriods.AnyAsync(cp => 
+            cp.HospitalSiteId == dto.HospitalSiteId && 
+            cp.Month == dto.SubmissionMonth);
+
         if (isLocked)
         {
             return BadRequest("Periode penginputan untuk bulan ini di site terpilih sudah DITUTUP (locked) karena CAPA sudah digenerate.");
@@ -84,7 +111,8 @@ public class EdSubmissionsController : ControllerBase
             CustomFieldsJson = dto.CustomFieldsJson ?? "{}",
             HospitalSiteId = dto.HospitalSiteId,
             CreatedDate = DateTime.UtcNow,
-            CreatedBy = "UGD Staff"
+            CreatedBy = "UGD Staff",
+            IsClosed = false
         };
 
         _context.EdCaseSubmissions.Add(submission);
@@ -99,8 +127,14 @@ public class EdSubmissionsController : ControllerBase
         if (submission == null)
             return NotFound("Data tidak ditemukan.");
 
-        if (submission.IsClosed)
+        var isLocked = await _context.ClosedPeriods.AnyAsync(cp => 
+            cp.HospitalSiteId == submission.HospitalSiteId && 
+            cp.Month == submission.SubmissionMonth);
+
+        if (isLocked)
+        {
             return BadRequest("Data ini sudah ditutup (locked) karena CAPA untuk periode ini sudah digenerate. Data tidak dapat diubah.");
+        }
 
         if (dto.EventTime < dto.DoorTime)
             return BadRequest("Waktu tindakan tidak boleh lebih awal dari waktu kedatangan.");
@@ -133,8 +167,14 @@ public class EdSubmissionsController : ControllerBase
         if (submission == null)
             return NotFound("Data tidak ditemukan.");
 
-        if (submission.IsClosed)
+        var isLocked = await _context.ClosedPeriods.AnyAsync(cp => 
+            cp.HospitalSiteId == submission.HospitalSiteId && 
+            cp.Month == submission.SubmissionMonth);
+
+        if (isLocked)
+        {
             return BadRequest("Data ini sudah ditutup (locked) karena CAPA untuk periode ini sudah digenerate. Data tidak dapat dihapus.");
+        }
 
         _context.EdCaseSubmissions.Remove(submission);
         await _context.SaveChangesAsync();

@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<QualityIndicator> QualityIndicators => Set<QualityIndicator>();
     public DbSet<EdIndicator> EdIndicators => Set<EdIndicator>();
     public DbSet<EdCaseSubmission> EdCaseSubmissions => Set<EdCaseSubmission>();
+    public DbSet<ClosedPeriod> ClosedPeriods => Set<ClosedPeriod>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +35,12 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(c => c.HospitalSiteId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<CapaAction>()
+            .HasOne(c => c.EdIndicator)
+            .WithMany()
+            .HasForeignKey(c => c.EdIndicatorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<QualityIndicator>()
             .HasOne(i => i.HospitalSite)
             .WithMany(s => s.QualityIndicators)
@@ -50,6 +57,12 @@ public class ApplicationDbContext : DbContext
             .HasOne(e => e.EdIndicator)
             .WithMany()
             .HasForeignKey(e => e.EdIndicatorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ClosedPeriod>()
+            .HasOne(e => e.HospitalSite)
+            .WithMany()
+            .HasForeignKey(e => e.HospitalSiteId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Fixed Guids for Seeds

@@ -46,7 +46,9 @@ public class CapaActionsController : ControllerBase
             c.RootCause,
             c.CorrectiveAction,
             c.PreventiveAction,
-            c.ActionPlan
+            c.ActionPlan,
+            c.EdIndicatorId,
+            c.SubmissionMonth
         });
 
         return Ok(result);
@@ -74,7 +76,9 @@ public class CapaActionsController : ControllerBase
             RootCause = dto.RootCause ?? string.Empty,
             CorrectiveAction = dto.CorrectiveAction ?? string.Empty,
             PreventiveAction = dto.PreventiveAction ?? string.Empty,
-            ActionPlan = dto.ActionPlan ?? string.Empty
+            ActionPlan = dto.ActionPlan ?? string.Empty,
+            EdIndicatorId = dto.EdIndicatorId,
+            SubmissionMonth = dto.SubmissionMonth
         };
 
         _context.CapaActions.Add(capa);
@@ -109,11 +113,12 @@ public class CapaActionsController : ControllerBase
         capa.AssignedTo = dto.AssignedTo ?? string.Empty;
         capa.HospitalSiteId = dto.HospitalSiteId;
         
-        // Update CAPA clinical process fields
         capa.RootCause = dto.RootCause ?? string.Empty;
         capa.CorrectiveAction = dto.CorrectiveAction ?? string.Empty;
         capa.PreventiveAction = dto.PreventiveAction ?? string.Empty;
         capa.ActionPlan = dto.ActionPlan ?? string.Empty;
+        capa.EdIndicatorId = dto.EdIndicatorId;
+        capa.SubmissionMonth = dto.SubmissionMonth;
 
         if (newStatus == CapaStatus.Resolved)
         {
@@ -160,7 +165,7 @@ public class CapaActionsController : ControllerBase
             var indicatorSubmissions = submissions.Where(s => s.EdIndicatorId == indicator.Id).ToList();
             if (!indicatorSubmissions.Any())
             {
-                continue; // Skip jika tidak ada data sama sekali untuk indikator ini
+                continue; 
             }
 
             var total = indicatorSubmissions.Count;
@@ -190,7 +195,9 @@ public class CapaActionsController : ControllerBase
                         RootCause = string.Empty,
                         CorrectiveAction = string.Empty,
                         PreventiveAction = string.Empty,
-                        ActionPlan = string.Empty
+                        ActionPlan = string.Empty,
+                        EdIndicatorId = indicator.Id,
+                        SubmissionMonth = request.Month
                     };
                     _context.CapaActions.Add(capa);
                     generatedCount++;
@@ -198,16 +205,27 @@ public class CapaActionsController : ControllerBase
             }
         }
 
-        // 3. Kunci / Close semua data submissions indikator UGD untuk site & month terpilih
-        foreach (var sub in submissions)
+        // 3. Catat di tabel ClosedPeriods (Tutup Buku) untuk site & month terpilih
+        var periodClosed = await _context.ClosedPeriods.AnyAsync(cp => 
+            cp.HospitalSiteId == request.HospitalSiteId && 
+            cp.Month == request.Month);
+
+        if (!periodClosed)
         {
-            sub.IsClosed = true;
+            var closedPeriod = new ClosedPeriod
+            {
+                HospitalSiteId = request.HospitalSiteId,
+                Month = request.Month,
+                ClosedDate = DateTime.UtcNow,
+                ClosedBy = "System CAPA Generator"
+            };
+            _context.ClosedPeriods.Add(closedPeriod);
         }
 
         await _context.SaveChangesAsync();
 
         return Ok(new { 
-            message = $"CAPA berhasil digenerate. {generatedCount} tindakan CAPA baru dibuat. Semua data kasus untuk periode {request.Month} di site terpilih sekarang berstatus LOCKED (Tutup).",
+            message = $"CAPA berhasil digenerate. {generatedCount} tindakan CAPA baru dibuat. Semua data kasus untuk periode {request.Month} di site terpilih sekarang berstatus LOCKED (Tutup Buku).",
             generatedCount 
         });
     }
@@ -221,9 +239,21 @@ public class CapaActionsController : ControllerBase
             return NotFound("Tindakan CAPA tidak ditemukan.");
         }
 
+        // Reopen the period (Tutup Buku dicabut) if deleting the generated CAPA
+        if (!string.IsNullOrEmpty(capa.SubmissionMonth))
+        {
+            var closedPeriod = await _context.ClosedPeriods.FirstOrDefaultAsync(cp => 
+                cp.HospitalSiteId == capa.HospitalSiteId && 
+                cp.Month == capa.SubmissionMonth);
+            if (closedPeriod != null)
+            {
+                _context.ClosedPeriods.Remove(closedPeriod);
+            }
+        }
+
         _context.CapaActions.Remove(capa);
         await _context.SaveChangesAsync();
-        return Ok(new { message = "CAPA berhasil dihapus." });
+        return Ok(new { message = "CAPA berhasil dihapus dan periode kembali DIBUKA untuk pengeditan." });
     }
 }
 
@@ -240,6 +270,8 @@ public class CreateCapaDto
     public string? CorrectiveAction { get; set; }
     public string? PreventiveAction { get; set; }
     public string? ActionPlan { get; set; }
+    public Guid? EdIndicatorId { get; set; }
+    public string? SubmissionMonth { get; set; }
 }
 
 public class GenerateCapaRequest
