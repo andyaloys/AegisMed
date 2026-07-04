@@ -857,10 +857,19 @@ export class DashboardComponent implements OnInit {
   }
 
   // ── GENERATE CAPA ACTIONS ──────────────────────────────────────────
+  getMaxMonthForGeneration(): string {
+    const today = new Date();
+    // Previous month relative to current local time
+    const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const year = prevMonth.getFullYear();
+    const month = String(prevMonth.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  }
+
   openGenerateCapaModal(): void {
     this.showGenerateCapaModal = true;
     this.genCapaSiteId = this.selectedSiteId || (this.data?.siteCompliance?.[0]?.siteId || '');
-    this.genCapaMonth = new Date().toISOString().slice(0, 7); // Default to current month "YYYY-MM"
+    this.genCapaMonth = this.getMaxMonthForGeneration();
     this.genCapaSuccess = false;
     this.genCapaError = false;
   }
@@ -875,6 +884,15 @@ export class DashboardComponent implements OnInit {
       this.genCapaMessage = 'Mohon lengkapi pilihan rumah sakit dan bulan.';
       return;
     }
+
+    // Verify selected month is indeed in the past (before current month)
+    const maxMonth = this.getMaxMonthForGeneration();
+    if (stringToMonthValue(this.genCapaMonth) > stringToMonthValue(maxMonth)) {
+      this.genCapaError = true;
+      this.genCapaMessage = 'Anda hanya dapat meng-generate CAPA untuk bulan yang sudah lewat saja.';
+      return;
+    }
+
     this.generatingCapa = true;
     this.genCapaError = false;
     this.genCapaSuccess = false;
@@ -898,4 +916,10 @@ export class DashboardComponent implements OnInit {
       }
     });
   }
+}
+
+// Helper function to convert YYYY-MM to numeric value for comparison
+function stringToMonthValue(monthStr: string): number {
+  const parts = monthStr.split('-');
+  return parseInt(parts[0], 10) * 12 + parseInt(parts[1], 10);
 }

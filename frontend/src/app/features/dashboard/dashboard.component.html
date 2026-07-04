@@ -1731,7 +1731,7 @@
               <!-- 2. BULAN -->
               <div class="form-group-excel">
                 <label>PILIH BULAN <span class="required">*</span></label>
-                <input type="month" name="genCapaMonth" [(ngModel)]="genCapaMonth" required [disabled]="generatingCapa">
+                <input type="month" name="genCapaMonth" [(ngModel)]="genCapaMonth" required [disabled]="generatingCapa" [max]="getMaxMonthForGeneration()">
               </div>
             </div>
 
