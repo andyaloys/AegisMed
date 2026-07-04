@@ -106,6 +106,33 @@ export class DashboardComponent implements OnInit {
   updateSuccess = false;
   updateError = false;
 
+  // CAPA state fields
+  capaActions: any[] = [];
+  loadingCapas = false;
+  submittingCapa = false;
+  capaSuccess = false;
+  capaError = false;
+  capaErrorMessage = '';
+  showCapaFormModal = false;
+
+  // CAPA form values
+  newCapaTitle = '';
+  newCapaDescription = '';
+  newCapaSeverity = 'Low';
+  newCapaStatus = 'Open';
+  newCapaDueDate = '';
+  newCapaAssignedTo = '';
+  newCapaSiteId = '';
+
+  // CAPA edit/delete fields
+  editingCapa: any = null;
+  showCapaDeleteConfirm = false;
+  deletingCapaId: string | null = null;
+  deletingCapa = false;
+  updatingCapa = false;
+  updateCapaSuccess = false;
+  updateCapaError = false;
+
   constructor(private dashboardService: DashboardService) {}
 
   ngOnInit(): void {
@@ -211,6 +238,8 @@ export class DashboardComponent implements OnInit {
         this.indicatorType = indicatorId;
         this.loadIndicatorSubmissions(indicatorId);
       }
+    } else if (menu === 'capas') {
+      this.loadCapaActions();
     } else {
       this.loadDashboardData();
     }
@@ -229,7 +258,6 @@ export class DashboardComponent implements OnInit {
         // Keep rates updated using the selected range
         const { start, end } = this.getDateRange();
         this.dashboardService.getDashboardData(this.selectedSiteId, start, end).subscribe(data => {
-          console.log('Site Compliance updated in component:', data.siteCompliance);
           this.data = data;
         });
       },
@@ -256,6 +284,8 @@ export class DashboardComponent implements OnInit {
       if (indicatorId) {
         this.loadIndicatorSubmissions(indicatorId);
       }
+    } else if (this.activeMenu === 'capas') {
+      this.loadCapaActions();
     } else {
       this.loadDashboardData();
     }
@@ -671,5 +701,133 @@ export class DashboardComponent implements OnInit {
     if (mins === null) return false;
     const activeInd = this.data?.edIndicators.find(i => i.id === this.indicatorType);
     return activeInd ? mins <= activeInd.targetMinutes : false;
+  }
+
+  // ── CAPA ACTIONS CRUD ──────────────────────────────────────────────
+  loadCapaActions(): void {
+    this.loadingCapas = true;
+    this.dashboardService.getCapaActions(this.selectedSiteId).subscribe({
+      next: (res) => {
+        this.capaActions = res;
+        this.loadingCapas = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.loadingCapas = false;
+      }
+    });
+  }
+
+  openCapaModal(): void {
+    this.showCapaFormModal = true;
+    this.editingCapa = null;
+    this.newCapaTitle = '';
+    this.newCapaDescription = '';
+    this.newCapaSeverity = 'Low';
+    this.newCapaStatus = 'Open';
+    this.newCapaDueDate = new Date().toISOString().split('T')[0];
+    this.newCapaAssignedTo = '';
+    this.newCapaSiteId = this.selectedSiteId || (this.data?.siteCompliance?.[0]?.siteId || '');
+    this.capaSuccess = false;
+    this.capaError = false;
+  }
+
+  closeCapaModal(): void {
+    this.showCapaFormModal = false;
+    this.editingCapa = null;
+  }
+
+  startEditCapa(capa: any): void {
+    this.editingCapa = { ...capa };
+    this.newCapaTitle = capa.title;
+    this.newCapaDescription = capa.description;
+    this.newCapaSeverity = capa.severity;
+    this.newCapaStatus = capa.status;
+    this.newCapaDueDate = capa.dueDate ? new Date(capa.dueDate).toISOString().split('T')[0] : '';
+    this.newCapaAssignedTo = capa.assignedTo;
+    this.newCapaSiteId = capa.hospitalSiteId;
+    this.showCapaFormModal = true;
+    this.capaSuccess = false;
+    this.capaError = false;
+  }
+
+  saveCapa(): void {
+    if (!this.newCapaTitle || !this.newCapaSiteId || !this.newCapaDueDate) {
+      this.capaError = true;
+      this.capaErrorMessage = 'Mohon isi Judul, Rumah Sakit Site, dan Batas Waktu.';
+      return;
+    }
+
+    const payload = {
+      title: this.newCapaTitle,
+      description: this.newCapaDescription,
+      severity: this.newCapaSeverity,
+      status: this.newCapaStatus,
+      dueDate: new Date(this.newCapaDueDate).toISOString(),
+      assignedTo: this.newCapaAssignedTo,
+      hospitalSiteId: this.newCapaSiteId
+    };
+
+    this.submittingCapa = true;
+    this.capaError = false;
+
+    if (this.editingCapa) {
+      this.dashboardService.updateCapaAction(this.editingCapa.id, payload).subscribe({
+        next: () => {
+          this.submittingCapa = false;
+          this.showCapaFormModal = false;
+          this.editingCapa = null;
+          this.loadCapaActions();
+          this.loadDashboardData();
+        },
+        error: (err) => {
+          this.submittingCapa = false;
+          this.capaError = true;
+          this.capaErrorMessage = err.error || 'Gagal mengubah tindakan CAPA.';
+        }
+      });
+    } else {
+      this.dashboardService.createCapaAction(payload).subscribe({
+        next: () => {
+          this.submittingCapa = false;
+          this.showCapaFormModal = false;
+          this.loadCapaActions();
+          this.loadDashboardData();
+        },
+        error: (err) => {
+          this.submittingCapa = false;
+          this.capaError = true;
+          this.capaErrorMessage = err.error || 'Gagal membuat tindakan CAPA.';
+        }
+      });
+    }
+  }
+
+  confirmDeleteCapa(id: string): void {
+    this.deletingCapaId = id;
+    this.showCapaDeleteConfirm = true;
+  }
+
+  cancelDeleteCapa(): void {
+    this.showCapaDeleteConfirm = false;
+    this.deletingCapaId = null;
+  }
+
+  executeDeleteCapa(): void {
+    if (!this.deletingCapaId) return;
+    this.deletingCapa = true;
+    this.dashboardService.deleteCapaAction(this.deletingCapaId).subscribe({
+      next: () => {
+        this.deletingCapa = false;
+        this.showCapaDeleteConfirm = false;
+        this.deletingCapaId = null;
+        this.loadCapaActions();
+        this.loadDashboardData();
+      },
+      error: (err) => {
+        this.deletingCapa = false;
+        console.error(err);
+      }
+    });
   }
 }

@@ -134,4 +134,25 @@ export class DashboardService {
   deleteEdCase(id: string): Observable<any> {
     return this.http.delete<any>(this.getApiUrl(`edsubmissions/${id}`));
   }
+
+  // ── CAPA ACTIONS CRUD ───────────────────────────────────────────
+  getCapaActions(siteId?: string): Observable<any[]> {
+    let url = this.getApiUrl('capaactions');
+    if (siteId) {
+      url += `?siteId=${siteId}`;
+    }
+    return this.http.get<any[]>(url);
+  }
+
+  createCapaAction(capaData: any): Observable<any> {
+    return this.http.post<any>(this.getApiUrl('capaactions'), capaData);
+  }
+
+  updateCapaAction(id: string, capaData: any): Observable<any> {
+    return this.http.put<any>(this.getApiUrl(`capaactions/${id}`), capaData);
+  }
+
+  deleteCapaAction(id: string): Observable<any> {
+    return this.http.delete<any>(this.getApiUrl(`capaactions/${id}`));
+  }
 }

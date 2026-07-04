@@ -522,7 +522,7 @@
       }
 
       @if (activeMenu === 'capas') {
-        <div class="header-section">
+        <div class="header-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <div class="title-area">
             <div class="title-with-badge">
               <h1>Corrective and Preventive Actions (CAPA)</h1>
@@ -533,6 +533,10 @@
             </div>
             <p>Pemantauan komitmen perbaikan insiden keselamatan pasien dan mutu klinis.</p>
           </div>
+          <button class="btn-header-green" (click)="openCapaModal()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Tambah Tindakan CAPA</span>
+          </button>
         </div>
         <div class="section-card">
           <div class="section-title">Daftar Tindakan Perbaikan Aktif</div>
@@ -540,26 +544,44 @@
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>Judul Tindakan</th>
+                  <th>Judul & Deskripsi Tindakan</th>
                   <th>Rumah Sakit Site</th>
+                  <th>PIC / Ditugaskan Ke</th>
                   <th>Tanggal Dibuat</th>
                   <th>Batas Waktu (Due Date)</th>
                   <th>Tingkat Keparahan</th>
                   <th>Status</th>
+                  <th class="col-aksi">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                @for (capa of data.recentCapas; track capa.id) {
+                @for (capa of capaActions; track capa.id) {
                   <tr>
-                    <td class="highlight">{{ capa.title }}</td>
+                    <td class="highlight">
+                      <div style="font-weight: 700; color: var(--text-primary);">{{ capa.title }}</div>
+                      <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; max-width: 320px; line-height: 1.3;">{{ capa.description || '-' }}</div>
+                    </td>
                     <td>{{ capa.siteName }}</td>
-                    <td>10/06/2026</td>
+                    <td>
+                      <span style="font-weight: 600; color: var(--text-primary);">{{ capa.assignedTo || '-' }}</span>
+                    </td>
+                    <td>{{ capa.createdDate | date:'dd/MM/yyyy' }}</td>
                     <td>{{ capa.dueDate | date:'dd/MM/yyyy' }}</td>
                     <td>
                       <span class="badge" [ngClass]="capa.severity.toLowerCase()">{{ capa.severity }}</span>
                     </td>
                     <td>
                       <span class="badge" [ngClass]="capa.status.toLowerCase()">{{ capa.status }}</span>
+                    </td>
+                    <td class="aksi-cell">
+                      <button class="btn-aksi btn-edit" (click)="startEditCapa(capa)" title="Edit">✏️</button>
+                      <button class="btn-aksi btn-delete" (click)="confirmDeleteCapa(capa.id)" title="Hapus">🗑️</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" style="text-align: center; padding: 32px; color: var(--text-secondary);">
+                      Belum ada tindakan CAPA terdaftar untuk site ini.
                     </td>
                   </tr>
                 }
@@ -1497,6 +1519,113 @@
               <button type="button" class="btn-modal-cancel" (click)="cancelEdit()" [disabled]="updating" style="margin: 0;">Batal</button>
               <button type="submit" class="btn-save" [disabled]="updating" style="margin: 0; padding: 9px 24px;">
                 {{ updating ? 'Menyimpan...' : 'Simpan Perubahan' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════ DELETE CAPA ACTION CONFIRMATION MODAL ═══════════════ -->
+  @if (showCapaDeleteConfirm) {
+    <div class="modal-overlay" (click)="cancelDeleteCapa()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-icon modal-icon-danger">🗑️</div>
+        <h3 class="modal-title">Hapus Tindakan CAPA?</h3>
+        <p class="modal-desc">Tindakan CAPA ini akan dihapus permanen dari sistem.</p>
+        <div class="modal-actions">
+          <button class="btn-modal-cancel" (click)="cancelDeleteCapa()" [disabled]="deletingCapa">Batal</button>
+          <button class="btn-modal-danger" (click)="executeDeleteCapa()" [disabled]="deletingCapa">
+            {{ deletingCapa ? 'Menghapus...' : 'Ya, Hapus' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════ ADD/EDIT CAPA ACTION MODAL ═══════════════ -->
+  @if (data && showCapaFormModal) {
+    <div class="modal-overlay" (click)="closeCapaModal()">
+      <div class="modal-card-excel" style="max-height: 90vh; overflow-y: auto;" (click)="$event.stopPropagation()">
+        
+        <div class="input-card">
+          <div class="input-card-header" style="background: linear-gradient(135deg, #10b981, #059669); justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="bullet">🛠️</span>
+              <span>{{ editingCapa ? 'EDIT TINDAKAN CAPA' : 'TAMBAH TINDAKAN CAPA' }}</span>
+            </div>
+            <button (click)="closeCapaModal()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px 8px; font-weight: bold;">✕</button>
+          </div>
+
+          <form (submit)="saveCapa()" class="excel-form">
+            @if (capaError) {
+              <div class="alert alert-danger" style="margin-bottom: 12px;">{{ capaErrorMessage }}</div>
+            }
+
+            <div class="green-inputs-group">
+              <!-- 1. HOSPITAL SITE -->
+              <div class="form-group-excel">
+                <label>HOSPITAL SITE <span class="required">*</span></label>
+                <select name="newCapaSiteId" [(ngModel)]="newCapaSiteId" required>
+                  @for (site of data.siteCompliance; track site.siteName) {
+                    <option [value]="site.siteId">{{ site.siteName }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- 2. JUDUL TINDAKAN -->
+              <div class="form-group-excel">
+                <label>JUDUL TINDAKAN <span class="required">*</span></label>
+                <input type="text" name="newCapaTitle" [(ngModel)]="newCapaTitle" placeholder="Masukkan judul tindakan perbaikan" required>
+              </div>
+
+              <!-- 3. PIC / DITUGASKAN KE -->
+              <div class="form-group-excel">
+                <label>DITUGASKAN KE (PIC)</label>
+                <input type="text" name="newCapaAssignedTo" [(ngModel)]="newCapaAssignedTo" placeholder="Nama staf / unit penanggung jawab">
+              </div>
+
+              <!-- 4. BATAS WAKTU (DUE DATE) -->
+              <div class="form-group-excel">
+                <label>BATAS WAKTU (DUE DATE) <span class="required">*</span></label>
+                <input type="date" name="newCapaDueDate" [(ngModel)]="newCapaDueDate" required>
+              </div>
+
+              <!-- 5. TINGKAT KEPARAHAN -->
+              <div class="form-group-excel">
+                <label>TINGKAT KEPARAHAN</label>
+                <select name="newCapaSeverity" [(ngModel)]="newCapaSeverity">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+
+              <!-- 6. STATUS -->
+              <div class="form-group-excel">
+                <label>STATUS</label>
+                <select name="newCapaStatus" [(ngModel)]="newCapaStatus">
+                  <option value="Open">Open</option>
+                  <option value="InProgress">InProgress</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Overdue">Overdue</option>
+                </select>
+              </div>
+
+              <!-- 7. DESKRIPSI -->
+              <div class="form-group-excel">
+                <label>DESKRIPSI TINDAKAN</label>
+                <textarea name="newCapaDescription" [(ngModel)]="newCapaDescription" rows="3" placeholder="Deskripsikan tindakan korektif dan preventif secara detail..."></textarea>
+              </div>
+            </div>
+
+            <div class="input-card-footer" style="display: flex; gap: 12px; justify-content: flex-end; padding: 14px 18px;">
+              <button type="button" class="btn-modal-cancel" (click)="closeCapaModal()" [disabled]="submittingCapa" style="margin: 0;">Batal</button>
+              <button type="submit" class="btn-save" [disabled]="submittingCapa" style="margin: 0; padding: 9px 24px;">
+                {{ submittingCapa ? 'Menyimpan...' : 'Simpan Tindakan' }}
               </button>
             </div>
           </form>
