@@ -171,7 +171,7 @@ public class DashboardService : IDashboardService
             var typeSubmissions = edSubmissions.Where(e => e.EdIndicatorId == indicator.Id).ToList();
             var total = typeSubmissions.Count;
             var compliant = typeSubmissions.Count(e => e.IsCompliant);
-            var rate = total > 0 ? Math.Round(((double)compliant / total) * 100, 1) : 0;
+            var rate = total > 0 ? Math.Round(((double)compliant / total) * 100, 1) : 100.0;
 
             dashboard.EdCompliance.Add(new EdIndicatorComplianceDto
             {
