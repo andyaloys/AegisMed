@@ -565,6 +565,7 @@ export class DashboardComponent implements OnInit {
     this.mobileFormOpen = true;
     this.submitSuccess = false;
     this.submitError = false;
+    this.hospitalSiteId = this.selectedSiteId || '';
   }
 
   closeMobileForm(): void {
@@ -868,7 +869,7 @@ export class DashboardComponent implements OnInit {
 
   openGenerateCapaModal(): void {
     this.showGenerateCapaModal = true;
-    this.genCapaSiteId = this.selectedSiteId || (this.data?.siteCompliance?.[0]?.siteId || '');
+    this.genCapaSiteId = this.selectedSiteId || '';
     this.genCapaMonth = this.getMaxMonthForGeneration();
     this.genCapaSuccess = false;
     this.genCapaError = false;

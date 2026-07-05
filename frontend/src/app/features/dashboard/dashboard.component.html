@@ -1579,6 +1579,7 @@
               <div class="form-group-excel">
                 <label>HOSPITAL SITE <span class="required">*</span></label>
                 <select name="genCapaSiteId" [(ngModel)]="genCapaSiteId" required [disabled]="generatingCapa">
+                  <option value="" disabled selected>Pilih Rumah Sakit...</option>
                   @for (site of data.siteCompliance; track site.siteName) {
                     <option [value]="site.siteId">{{ site.siteName }}</option>
                   }
