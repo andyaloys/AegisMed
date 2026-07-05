@@ -61,11 +61,10 @@ public class DashboardService : IDashboardService
         var dashboard = new DashboardDto();
 
         // 1. Summary Metrics
-        var completedAudits = audits.Where(a => a.Status == AuditStatus.Completed).ToList();
         dashboard.Summary = new SummaryMetrics
         {
-            TotalAudits = audits.Count,
-            AverageAuditScore = completedAudits.Any() ? Math.Round(completedAudits.Average(a => a.Score), 1) : 0,
+            TotalAudits = edSubmissions.Count,
+            AverageAuditScore = edSubmissions.Any() ? Math.Round(((double)edSubmissions.Count(e => e.IsCompliant) / edSubmissions.Count) * 100, 1) : 100.0,
             TotalCapa = capas.Count,
             OpenCapa = capas.Count(c => c.Status == CapaStatus.Open),
             InProgressCapa = capas.Count(c => c.Status == CapaStatus.InProgress),
@@ -74,24 +73,25 @@ public class DashboardService : IDashboardService
             CriticalIssues = capas.Count(c => c.Severity == CapaSeverity.Critical && c.Status != CapaStatus.Resolved)
         };
 
-        // 2. Site Compliance
+        // 2. Site Compliance (calculated from UGD Cases/EdCaseSubmissions compliance rate)
         foreach (var site in sites)
         {
-            var siteAudits = audits.Where(a => a.HospitalSiteId == site.Id).ToList();
-            var siteCompletedAudits = siteAudits.Where(a => a.Status == AuditStatus.Completed).ToList();
+            var siteSubmissions = edSubmissions.Where(e => e.HospitalSiteId == site.Id).ToList();
             var siteCapas = capas.Where(c => c.HospitalSiteId == site.Id).ToList();
 
-            var avgScore = siteCompletedAudits.Any() ? Math.Round(siteCompletedAudits.Average(a => a.Score), 1) : 0;
+            var complianceRate = siteSubmissions.Any() 
+                ? Math.Round(((double)siteSubmissions.Count(e => e.IsCompliant) / siteSubmissions.Count) * 100, 1) 
+                : 100.0;
             
             dashboard.SiteCompliance.Add(new SiteComplianceDto
             {
                 SiteId = site.Id,
                 SiteName = site.Name,
                 SiteCode = site.Code,
-                AverageScore = avgScore,
-                AuditsCount = siteAudits.Count,
+                AverageScore = complianceRate,
+                AuditsCount = siteSubmissions.Count,
                 OpenCapaCount = siteCapas.Count(c => c.Status != CapaStatus.Resolved),
-                ComplianceRate = avgScore // Using average score as compliance rate for simplicity
+                ComplianceRate = complianceRate
             });
         }
 
