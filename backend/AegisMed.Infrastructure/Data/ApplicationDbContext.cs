@@ -11,9 +11,7 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<HospitalSite> HospitalSites => Set<HospitalSite>();
-    public DbSet<QualityAudit> QualityAudits => Set<QualityAudit>();
     public DbSet<CapaAction> CapaActions => Set<CapaAction>();
-    public DbSet<QualityIndicator> QualityIndicators => Set<QualityIndicator>();
     public DbSet<EdIndicator> EdIndicators => Set<EdIndicator>();
     public DbSet<EdCaseSubmission> EdCaseSubmissions => Set<EdCaseSubmission>();
     public DbSet<ClosedPeriod> ClosedPeriods => Set<ClosedPeriod>();
@@ -23,12 +21,6 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // Configure relationships
-        modelBuilder.Entity<QualityAudit>()
-            .HasOne(a => a.HospitalSite)
-            .WithMany(s => s.Audits)
-            .HasForeignKey(a => a.HospitalSiteId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         modelBuilder.Entity<CapaAction>()
             .HasOne(c => c.HospitalSite)
             .WithMany(s => s.CapaActions)
@@ -40,12 +32,6 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.EdIndicatorId)
             .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<QualityIndicator>()
-            .HasOne(i => i.HospitalSite)
-            .WithMany(s => s.QualityIndicators)
-            .HasForeignKey(i => i.HospitalSiteId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<EdCaseSubmission>()
             .HasOne(e => e.HospitalSite)
@@ -103,28 +89,12 @@ public class ApplicationDbContext : DbContext
             new EdIndicator { Id = indMomChildren, Name = "Respon Time Bidan (Mom & Children)", Category = "Emergency Department", TargetDescription = "Target: <= 5 mins", TargetMinutes = 5.0 }
         );
 
-        modelBuilder.Entity<QualityAudit>().HasData(
-            new QualityAudit { Id = new Guid("b1111111-b111-b111-b111-b11111111111"), Title = "Clinical Quality Audit Q2", Category = "Clinical", AuditDate = new DateTime(2026, 6, 15), Auditor = "Dr. Sarah", Score = 92.5, Status = AuditStatus.Completed, HospitalSiteId = site1 },
-            new QualityAudit { Id = new Guid("b2222222-b222-b222-b222-b22222222222"), Title = "Emergency Response Protocol Audit", Category = "Safety", AuditDate = new DateTime(2026, 6, 18), Auditor = "John Doe", Score = 88.0, Status = AuditStatus.Completed, HospitalSiteId = site2 },
-            new QualityAudit { Id = new Guid("b3333333-b333-b333-b333-b33333333333"), Title = "Medication Safety & Prescription Audit", Category = "Clinical", AuditDate = new DateTime(2026, 6, 20), Auditor = "Jane Smith", Score = 74.2, Status = AuditStatus.Completed, HospitalSiteId = site3 },
-            new QualityAudit { Id = new Guid("b4444444-b444-b444-b444-b44444444444"), Title = "OT Sterility & Infection Control", Category = "Safety", AuditDate = new DateTime(2026, 6, 22), Auditor = "Dr. Sarah", Score = 0, Status = AuditStatus.InProgress, HospitalSiteId = site4 },
-            new QualityAudit { Id = new Guid("b5555555-b555-b555-b555-b55555555555"), Title = "Patient Safety Goals (IPSG) Audit", Category = "Clinical", AuditDate = new DateTime(2026, 6, 10), Auditor = "Alice Brown", Score = 95.0, Status = AuditStatus.Completed, HospitalSiteId = site1 }
-        );
-
         modelBuilder.Entity<CapaAction>().HasData(
             new CapaAction { Id = new Guid("c1111111-c111-c111-c111-c11111111111"), Title = "Emergency Cart Expiry System", Description = "Implement daily digital checklists for emergency cart expiration audits.", Status = CapaStatus.InProgress, Severity = CapaSeverity.High, CreatedDate = new DateTime(2026, 6, 20), DueDate = new DateTime(2026, 7, 10), HospitalSiteId = site3 },
             new CapaAction { Id = new Guid("c2222222-c222-c222-c222-c22222222222"), Title = "Standardize Code Blue Protocol", Description = "Standardize clinical response times for Code Blue incidents across all units.", Status = CapaStatus.Open, Severity = CapaSeverity.Critical, CreatedDate = new DateTime(2026, 6, 18), DueDate = new DateTime(2026, 6, 28), HospitalSiteId = site2 },
             new CapaAction { Id = new Guid("c3333333-c333-c333-c333-c33333333333"), Title = "Sound-Alike Drugs (LASA) Labeling", Description = "Re-label sound-alike look-alike medications in the main pharmacy.", Status = CapaStatus.Resolved, Severity = CapaSeverity.Medium, CreatedDate = new DateTime(2026, 6, 10), DueDate = new DateTime(2026, 6, 20), ResolvedDate = new DateTime(2026, 6, 14), HospitalSiteId = site1 },
             new CapaAction { Id = new Guid("c4444444-c444-c444-c444-c44444444444"), Title = "Replace OT HEPA Filters", Description = "Failure to replace HEPA filters in Operating Theatre 3 as scheduled.", Status = CapaStatus.Overdue, Severity = CapaSeverity.Critical, CreatedDate = new DateTime(2026, 5, 5), DueDate = new DateTime(2026, 6, 10), HospitalSiteId = site3 },
             new CapaAction { Id = new Guid("c5555555-c555-c555-c555-c55555555555"), Title = "Update General Safety Training Logs", Description = "Add missing orientation logs for nursing staff in Wing A.", Status = CapaStatus.Open, Severity = CapaSeverity.Low, CreatedDate = new DateTime(2026, 6, 22), DueDate = new DateTime(2026, 7, 15), HospitalSiteId = site4 }
-        );
-
-        modelBuilder.Entity<QualityIndicator>().HasData(
-            new QualityIndicator { Id = new Guid("d1111111-d111-d111-d111-d11111111111"), Name = "Hand Hygiene Compliance", Category = "Patient Safety", Month = "2026-06", Value = 94.0, Target = 95.0, Unit = "%", HospitalSiteId = site1 },
-            new QualityIndicator { Id = new Guid("d2222222-d222-d222-d222-d22222222222"), Name = "ER Waiting Time (Triage to MD)", Category = "Service Quality", Month = "2026-06", Value = 24.5, Target = 30.0, Unit = "Min", HospitalSiteId = site1 },
-            new QualityIndicator { Id = new Guid("d3333333-d333-d333-d333-d33333333333"), Name = "Surgical Site Infection Rate", Category = "Clinical Quality", Month = "2026-06", Value = 0.8, Target = 1.2, Unit = "%", HospitalSiteId = site2 },
-            new QualityIndicator { Id = new Guid("d4444444-d444-d444-d444-d44444444444"), Name = "Patient Fall Incidents", Category = "Patient Safety", Month = "2026-06", Value = 1.0, Target = 0.5, Unit = "Cases", HospitalSiteId = site3 },
-            new QualityIndicator { Id = new Guid("d5555555-d555-d555-d555-d55555555555"), Name = "Medication Errors (Near Miss)", Category = "Patient Safety", Month = "2026-06", Value = 0.15, Target = 0.20, Unit = "%", HospitalSiteId = site4 }
         );
 
         // Seed ED Case Submissions (Golden Hour Initiative)

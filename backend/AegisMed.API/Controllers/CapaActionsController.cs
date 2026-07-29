@@ -205,47 +205,7 @@ public class CapaActionsController : ControllerBase
             }
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        // 2. SCAN KEY QUALITY INDICATORS (from QualityIndicators table)
-        // ══════════════════════════════════════════════════════════════════════
-        var qualityIndicators = await _context.QualityIndicators
-            .Where(q => q.HospitalSiteId == request.HospitalSiteId && q.Month == request.Month)
-            .ToListAsync();
 
-        foreach (var qInd in qualityIndicators)
-        {
-            // Skip negative safety metrics (like Infection rate or Falls where lower is better)
-            bool isNegMetric = qInd.Name.Contains("Infection") || qInd.Name.Contains("Fall") || qInd.Name.Contains("Errors");
-            if (qInd.Unit == "%" && !isNegMetric && qInd.Value < 90.0)
-            {
-                string capaTitle = $"CAPA: {qInd.Name} - {request.Month}";
-                var exists = await _context.CapaActions.AnyAsync(c => 
-                    c.HospitalSiteId == request.HospitalSiteId && 
-                    c.Title == capaTitle);
-
-                if (!exists)
-                {
-                    var capa = new CapaAction
-                    {
-                        Title = capaTitle,
-                        Description = $"Nilai indikator mutu {qInd.Name} di bawah 90% (Pencapaian: {qInd.Value}%). Silakan isi analisis akar masalah, tindakan perbaikan, dan pencegahan.",
-                        Status = CapaStatus.Open,
-                        Severity = CapaSeverity.High,
-                        CreatedDate = DateTime.UtcNow,
-                        DueDate = DateTime.UtcNow.AddDays(14),
-                        AssignedTo = "Komite Mutu / Kepala Unit",
-                        HospitalSiteId = request.HospitalSiteId,
-                        RootCause = string.Empty,
-                        CorrectiveAction = string.Empty,
-                        PreventiveAction = string.Empty,
-                        ActionPlan = string.Empty,
-                        SubmissionMonth = request.Month
-                    };
-                    _context.CapaActions.Add(capa);
-                    generatedCount++;
-                }
-            }
-        }
 
         // ══════════════════════════════════════════════════════════════════════
         // 3. LOCK PERIOD (Tutup Buku)

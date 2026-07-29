@@ -83,17 +83,62 @@ export interface DashboardData {
   edIndicators: EdIndicatorDto[];
 }
 
+import { BehaviorSubject } from 'rxjs';
+
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
+  private selectedSiteIdSource = new BehaviorSubject<string | undefined>(undefined);
+  selectedSiteId$ = this.selectedSiteIdSource.asObservable();
+
+  private dateFilterSource = new BehaviorSubject<{start: string, end: string}>({start: '2026-01', end: '2026-06'});
+  dateFilter$ = this.dateFilterSource.asObservable();
+
+  private themeSource = new BehaviorSubject<'light' | 'dark'>('light');
+  theme$ = this.themeSource.asObservable();
+
+  setSelectedSiteId(siteId: string | undefined) {
+    this.selectedSiteIdSource.next(siteId);
+  }
+  getSelectedSiteId(): string | undefined {
+    return this.selectedSiteIdSource.value;
+  }
+
+  setDateFilters(start: string, end: string) {
+    this.dateFilterSource.next({ start, end });
+  }
+  getFilterStartMonth(): string {
+    return this.dateFilterSource.value.start;
+  }
+
+  getFilterEndMonth(): string {
+    return this.dateFilterSource.value.end;
+  }
+
+  setTheme(theme: 'light' | 'dark') {
+    this.themeSource.next(theme);
+    if (theme === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.removeAttribute('data-theme');
+    }
+  }
+  getTheme(): 'light' | 'dark' {
+    return this.themeSource.value;
+  }
+
   private getApiUrl(endpoint: string): string {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const baseUrl = isLocal ? 'http://localhost:5000/api' : '/api';
     return `${baseUrl}/${endpoint}`;
   }
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    // Initialize theme based on body attribute if already set, otherwise default light
+    const currentTheme = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    this.setTheme(currentTheme);
+  }
 
   getDashboardData(siteId?: string, startDate?: string, endDate?: string): Observable<DashboardData> {
     let url = this.getApiUrl('dashboard');

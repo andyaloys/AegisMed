@@ -17,44 +17,38 @@ public class DashboardService : IDashboardService
 
     public async Task<DashboardDto> GetDashboardDataAsync(Guid? siteId, System.DateTime? startDate, System.DateTime? endDate)
     {
-        var auditQuery = _context.QualityAudits.Include(a => a.HospitalSite).AsQueryable();
         var capaQuery = _context.CapaActions.Include(c => c.HospitalSite).AsQueryable();
-        var indicatorQuery = _context.QualityIndicators.Include(i => i.HospitalSite).AsQueryable();
         var edSubmissionQuery = _context.EdCaseSubmissions.Include(e => e.HospitalSite).AsQueryable();
 
         if (siteId.HasValue)
         {
-            auditQuery = auditQuery.Where(a => a.HospitalSiteId == siteId.Value);
             capaQuery = capaQuery.Where(c => c.HospitalSiteId == siteId.Value);
-            indicatorQuery = indicatorQuery.Where(i => i.HospitalSiteId == siteId.Value);
             edSubmissionQuery = edSubmissionQuery.Where(e => e.HospitalSiteId == siteId.Value);
         }
 
         if (startDate.HasValue)
         {
             var start = startDate.Value.Date;
-            auditQuery = auditQuery.Where(a => a.AuditDate >= start);
-            capaQuery = capaQuery.Where(c => c.CreatedDate >= start);
+            var startMonthStr = startDate.Value.ToString("yyyy-MM");
+            capaQuery = capaQuery.Where(c => 
+                (!string.IsNullOrEmpty(c.SubmissionMonth) && string.Compare(c.SubmissionMonth, startMonthStr) >= 0) ||
+                (string.IsNullOrEmpty(c.SubmissionMonth) && c.CreatedDate >= start)
+            );
             edSubmissionQuery = edSubmissionQuery.Where(e => e.DoorTime >= start);
-            
-            var startMonthStr = start.ToString("yyyy-MM");
-            indicatorQuery = indicatorQuery.Where(i => string.Compare(i.Month, startMonthStr) >= 0);
         }
 
         if (endDate.HasValue)
         {
-            var end = endDate.Value.Date.AddDays(1).AddTicks(-1);
-            auditQuery = auditQuery.Where(a => a.AuditDate <= end);
-            capaQuery = capaQuery.Where(c => c.CreatedDate <= end);
+            var end = new System.DateTime(endDate.Value.Year, endDate.Value.Month, 1).AddMonths(1).AddTicks(-1);
+            var endMonthStr = endDate.Value.ToString("yyyy-MM");
+            capaQuery = capaQuery.Where(c => 
+                (!string.IsNullOrEmpty(c.SubmissionMonth) && string.Compare(c.SubmissionMonth, endMonthStr) <= 0) ||
+                (string.IsNullOrEmpty(c.SubmissionMonth) && c.CreatedDate <= end)
+            );
             edSubmissionQuery = edSubmissionQuery.Where(e => e.DoorTime <= end);
-
-            var endMonthStr = end.ToString("yyyy-MM");
-            indicatorQuery = indicatorQuery.Where(i => string.Compare(i.Month, endMonthStr) <= 0);
         }
 
-        var audits = await auditQuery.ToListAsync();
         var capas = await capaQuery.ToListAsync();
-        var indicators = await indicatorQuery.ToListAsync();
         var edSubmissions = await edSubmissionQuery.ToListAsync();
         var sites = await _context.HospitalSites.ToListAsync();
 
@@ -95,33 +89,7 @@ public class DashboardService : IDashboardService
             });
         }
 
-        // 3. CAPA Breakdown by Status
-        var statusGroups = capas.GroupBy(c => c.Status);
-        foreach (var group in statusGroups)
-        {
-            dashboard.CapaBreakdown.Add(new CapaStatusBreakdown
-            {
-                Status = group.Key.ToString(),
-                Count = group.Count()
-            });
-        }
-
-        // 4. Recent Audits (Top 5)
-        dashboard.RecentAudits = audits
-            .OrderByDescending(a => a.AuditDate)
-            .Take(5)
-            .Select(a => new RecentAuditDto
-            {
-                Id = a.Id,
-                Title = a.Title,
-                SiteName = a.HospitalSite?.Name ?? "Unknown",
-                AuditDate = a.AuditDate,
-                Score = a.Score,
-                Status = a.Status.ToString()
-            })
-            .ToList();
-
-        // 5. Recent CAPAs (Top 5)
+        // 3. Recent CAPAs (Top 5)
         dashboard.RecentCapas = capas
             .OrderByDescending(c => c.CreatedDate)
             .Take(5)
@@ -136,35 +104,7 @@ public class DashboardService : IDashboardService
             })
             .ToList();
 
-        // 6. Key Indicators
-        dashboard.KeyIndicators = indicators
-            .Select(i => {
-                string status = "On Target";
-                
-                // For safety metrics (like Infection Rate, Fall Incidents), lower than target is good.
-                // For positive compliance (like Hand Hygiene), higher than target is good.
-                if (i.Name.Contains("Infection") || i.Name.Contains("Fall") || i.Name.Contains("Errors"))
-                {
-                    status = i.Value <= i.Target ? "On Target" : "Below Target";
-                }
-                else
-                {
-                    status = i.Value >= i.Target ? "On Target" : "Below Target";
-                }
-
-                return new IndicatorSummaryDto
-                {
-                    Name = i.Name,
-                    Category = i.Category,
-                    CurrentValue = i.Value,
-                    Target = i.Target,
-                    Unit = i.Unit,
-                    PerformanceStatus = status
-                };
-            })
-            .ToList();
-
-        // 7. ED Indicators Compliance (Golden Hour Initiative)
+        // 4. ED Indicators Compliance (Golden Hour Initiative)
         var edIndicators = await _context.EdIndicators.ToListAsync();
         foreach (var indicator in edIndicators)
         {
@@ -184,7 +124,7 @@ public class DashboardService : IDashboardService
             });
         }
 
-        // 8. Dynamic UGD Indicators List DTO
+        // 5. Dynamic UGD Indicators List DTO
         dashboard.EdIndicators = edIndicators.Select(i => new EdIndicatorDto
         {
             Id = i.Id,

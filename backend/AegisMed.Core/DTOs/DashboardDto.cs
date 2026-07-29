@@ -8,10 +8,7 @@ public class DashboardDto
 {
     public SummaryMetrics Summary { get; set; } = new();
     public List<SiteComplianceDto> SiteCompliance { get; set; } = new();
-    public List<CapaStatusBreakdown> CapaBreakdown { get; set; } = new();
-    public List<RecentAuditDto> RecentAudits { get; set; } = new();
     public List<RecentCapaDto> RecentCapas { get; set; } = new();
-    public List<IndicatorSummaryDto> KeyIndicators { get; set; } = new();
     public List<EdIndicatorComplianceDto> EdCompliance { get; set; } = new();
     public List<EdIndicatorDto> EdIndicators { get; set; } = new();
 }
@@ -64,15 +61,7 @@ public class CapaStatusBreakdown
     public string Severity { get; set; } = string.Empty;
 }
 
-public class RecentAuditDto
-{
-    public Guid Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string SiteName { get; set; } = string.Empty;
-    public DateTime AuditDate { get; set; }
-    public double Score { get; set; }
-    public string Status { get; set; } = string.Empty;
-}
+
 
 public class RecentCapaDto
 {
@@ -84,12 +73,4 @@ public class RecentCapaDto
     public string Status { get; set; } = string.Empty;
 }
 
-public class IndicatorSummaryDto
-{
-    public string Name { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;
-    public double CurrentValue { get; set; }
-    public double Target { get; set; }
-    public string Unit { get; set; } = string.Empty;
-    public string PerformanceStatus { get; set; } = string.Empty; // e.g. "On Target", "Below Target"
-}
+

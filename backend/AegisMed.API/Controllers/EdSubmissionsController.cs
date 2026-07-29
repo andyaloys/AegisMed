@@ -36,7 +36,10 @@ public class EdSubmissionsController : ControllerBase
             query = query.Where(e => e.DoorTime >= startDate.Value.Date);
 
         if (endDate.HasValue)
-            query = query.Where(e => e.DoorTime <= endDate.Value.Date.AddDays(1).AddTicks(-1));
+        {
+            var end = new System.DateTime(endDate.Value.Year, endDate.Value.Month, 1).AddMonths(1).AddTicks(-1);
+            query = query.Where(e => e.DoorTime <= end);
+        }
 
         if (!startDate.HasValue && !endDate.HasValue && !string.IsNullOrEmpty(month))
             query = query.Where(e => e.SubmissionMonth == month);

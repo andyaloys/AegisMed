@@ -8,7 +8,5 @@ public class HospitalSite
     public string Region { get; set; } = string.Empty;
     
     // Navigation properties
-    public ICollection<QualityAudit> Audits { get; set; } = new List<QualityAudit>();
     public ICollection<CapaAction> CapaActions { get; set; } = new List<CapaAction>();
-    public ICollection<QualityIndicator> QualityIndicators { get; set; } = new List<QualityIndicator>();
 }
