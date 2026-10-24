@@ -85,7 +85,10 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 app.UseCors("AllowAll");
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

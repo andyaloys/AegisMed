@@ -4,9 +4,12 @@ using System;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-Console.WriteLine("Connecting to database aegismed_qms_pg...");
+string connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? (args.Length > 0 ? args[0] : "Host=localhost;Database=aegismed_qms_pg;Username=postgres;Password=P@ssw0rd;");
+
+Console.WriteLine($"Connecting to database with: {connStr.Split(';')[0]}...");
 var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-optionsBuilder.UseNpgsql("Host=localhost;Database=aegismed_qms_pg;Username=postgres;Password=postgres;");
+optionsBuilder.UseNpgsql(connStr);
 
 using var context = new ApplicationDbContext(optionsBuilder.Options);
 
