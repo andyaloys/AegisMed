@@ -1,0 +1,307 @@
+<!-- DEDICATED CLINICAL CASE INPUT PAGE: CLEAN SECTIONED TWO-COLUMN LAYOUT -->
+<div class="case-input-page">
+
+  <!-- 1. SLIM HERO BANNER -->
+  <div class="input-hero-banner slim">
+    <div class="input-header-left">
+      <div class="ind-breadcrumb compact">
+        <span>Golden Hour</span>
+        <span class="sep">/</span>
+        <a [routerLink]="['/ugd-cases', indicatorId]" class="breadcrumb-link">{{ activeIndicator?.name || 'Spesialisasi' }}</a>
+        <span class="sep">/</span>
+        <span class="active">{{ isEditMode ? ('Edit Kasus ' + (emrNumber || '')) : 'Input Kasus Baru' }}</span>
+      </div>
+      <div class="input-title-row compact">
+        <h1 class="input-main-title compact">
+          <span class="title-icon">{{ isEditMode ? '✏️' : '📝' }}</span>
+          {{ isEditMode ? ('Edit Data Kasus Pasien: ' + (emrNumber || '')) : ('Input Kasus Klinis: ' + (activeIndicator?.name || '')) }}
+        </h1>
+        <span class="ind-target-chip compact">
+          <span class="chip-pulse-dot"></span>
+          Target Standar: {{ activeIndicator?.targetDescription || '<= Standar' }}
+        </span>
+        @if (isClosed) {
+          <span class="period-badge closed" style="margin-left: 6px; font-size: 0.76rem; background: #fee2e2; color: #b91c1c; border-radius: 9999px; padding: 2px 8px; font-weight: 600;">
+            🔒 Periode Terkunci
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="input-header-actions">
+      <button type="button" class="btn-back-outline compact" (click)="goBack()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+        <span>{{ isEditMode ? 'Batal & Kembali ke Tabel' : 'Kembali ke Daftar' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. NOTIFICATIONS (SLIM TOAST) -->
+  @if (successToast) {
+    <div class="alert-banner alert-success compact animate-fade-in">
+      <div class="alert-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="alert-content">
+        <strong>Sukses!</strong> {{ successToast }}
+      </div>
+      <button class="alert-dismiss" (click)="successToast = ''">&times;</button>
+    </div>
+  }
+
+  @if (submitError) {
+    <div class="alert-banner alert-danger compact animate-fade-in">
+      <div class="alert-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="alert-content">
+        <strong>Perhatian!</strong> {{ submitErrorMessage }}
+      </div>
+      <button class="alert-dismiss" (click)="submitError = false">&times;</button>
+    </div>
+  }
+
+  <!-- 3. MAIN FORM: TWO BALANCED SECTION CARDS (NO CROWDED ROWS, AUTO-RESIZING TEXTBOXES) -->
+  <form (ngSubmit)="saveCase(false)" #caseForm="ngForm" class="sections-two-col-grid">
+
+    <!-- ═════════ SECTION 1 (KIRI): IDENTITAS PASIEN & KRONOLOGI WAKTU ═════════ -->
+    <div class="clinical-section-card">
+      <div class="section-card-header">
+        <div class="section-badge-icon blue">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="section-header-text">
+          <h2 class="section-card-title">1. Identitas Pasien & Kronologi Waktu Pelayanan</h2>
+          <p class="section-card-sub">Data registrasi UGD dan pencatatan jam kedatangan s.d. tindakan</p>
+        </div>
+      </div>
+
+      <div class="section-card-body">
+        <!-- Site -->
+        <div class="form-group-item full-span">
+          <label class="field-title">Rumah Sakit (Hospital Site) <span class="req">*</span></label>
+          <select name="hospitalSiteId" [(ngModel)]="hospitalSiteId" required class="form-ctrl">
+            <option value="" disabled>-- Pilih Rumah Sakit --</option>
+            @if (data && data.siteCompliance) {
+              @for (site of data.siteCompliance; track site.siteId) {
+                <option [value]="site.siteId">{{ site.siteName }}</option>
+              }
+            }
+          </select>
+        </div>
+
+        <!-- No RM & Inisial -->
+        <div class="form-row-duo">
+          <div class="form-group-item" style="flex: 2;">
+            <label class="field-title">No. Rekam Medis (EMR) <span class="req">*</span></label>
+            <input type="text" name="emrNumber" [(ngModel)]="emrNumber" placeholder="Contoh: RM-2026-0881" required class="form-ctrl font-semibold">
+          </div>
+          <div class="form-group-item" style="flex: 1;">
+            <label class="field-title">Inisial Pasien</label>
+            <input type="text" name="patientInitials" [(ngModel)]="patientInitials" placeholder="Tn. / Ny." class="form-ctrl text-center">
+          </div>
+        </div>
+
+        <!-- Tanggal Kasus & Jam Tiba -->
+        <div class="form-row-duo">
+          <div class="form-group-item" style="flex: 1.2;">
+            <label class="field-title">Tanggal Masuk IGD <span class="req">*</span></label>
+            <input type="date" name="caseDate" [(ngModel)]="caseDate" (change)="onFormChange()" required class="form-ctrl">
+          </div>
+          <div class="form-group-item" style="flex: 1;">
+            <label class="field-title">Waktu Tiba IGD <span class="req">*</span></label>
+            <input type="time" name="doorTimeOnly" [(ngModel)]="doorTimeOnly" (change)="onFormChange()" required class="form-ctrl font-semibold">
+          </div>
+        </div>
+
+        <!-- Jam Tindakan & Live Response Monitor -->
+        <div class="form-row-duo">
+          <div class="form-group-item" style="flex: 1.2;">
+            <label class="field-title">{{ getEventTimeShortLabel() }} <span class="req">*</span></label>
+            <input type="time" name="eventTimeOnly" [(ngModel)]="eventTimeOnly" (change)="onFormChange()" required class="form-ctrl font-semibold">
+          </div>
+          <div class="form-group-item" style="flex: 1;">
+            <label class="field-title">Status Golden Hour</label>
+            <div class="monitor-live-pill" [class.compliant]="previewMinutes !== null && previewCompliant" [class.overdue]="previewMinutes !== null && !previewCompliant">
+              @if (previewMinutes !== null) {
+                <span class="live-minutes-text">⏱️ {{ previewMinutes }} m</span>
+                @if (previewCompliant) {
+                  <span class="status-indicator-tag success">TERCAPAI</span>
+                } @else {
+                  <span class="status-indicator-tag danger">OVERDUE</span>
+                }
+              } @else {
+                <span class="placeholder-text">Isi jam tiba & selesai</span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════ SECTION 2 (KANAN): PARAMETER KLINIS SPESIFIK & CATATAN ═════════ -->
+    <div class="clinical-section-card">
+      <div class="section-card-header">
+        <div class="section-badge-icon purple">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="section-header-text">
+          <h2 class="section-card-title">2. Data Klinis Spesifik & Catatan Justifikasi</h2>
+          <p class="section-card-sub">Parameter penunjang medis khusus {{ activeIndicator?.name }}</p>
+        </div>
+      </div>
+
+      <div class="section-card-body">
+
+        <!-- Diagnosa Medis (Auto-resizing Textbox: Menyesuaikan Otomatis Sesuai Panjang Teks) -->
+        <div class="form-group-item full-span">
+          <label class="field-title">Diagnosa Medis / Kasus Klinis <span class="req">*</span></label>
+          <textarea
+            name="medicalDiagnosis"
+            [(ngModel)]="medicalDiagnosis"
+            rows="1"
+            (input)="autoResize($event.target)"
+            placeholder="Ketik diagnosa medis... (kotak otomatis menyesuaikan ukuran jika teks panjang)"
+            class="form-ctrl input-auto-resize"></textarea>
+        </div>
+
+        <!-- Dynamic Indicator Specific Inputs -->
+        @if (getIndicatorCode() === 'orthopaedics') {
+          <div class="form-row-duo">
+            <div class="form-group-item" style="flex: 1.2;">
+              <label class="field-title">Skala Nyeri (1 - 10)</label>
+              <select name="painScore" [(ngModel)]="painScore" class="form-ctrl">
+                <option [value]="1">1 - Nyeri Sangat Ringan</option>
+                <option [value]="2">2 - Nyeri Ringan</option>
+                <option [value]="3">3 - Ringan-Sedang</option>
+                <option [value]="4">4 - Nyeri Sedang</option>
+                <option [value]="5">5 - Sedang</option>
+                <option [value]="6">6 - Cukup Berat</option>
+                <option [value]="7">7 - Nyeri Berat</option>
+                <option [value]="8">8 - Berat</option>
+                <option [value]="9">9 - Sangat Berat</option>
+                <option [value]="10">10 - Tak Tertahankan</option>
+              </select>
+            </div>
+            <div class="form-group-item" style="flex: 1;">
+              <label class="field-title">Jam Pre-Assess</label>
+              <input type="time" name="assessmentTimeOnly" [(ngModel)]="assessmentTimeOnly" class="form-ctrl">
+            </div>
+          </div>
+        } @else if (getIndicatorCode() === 'neurology') {
+          <div class="form-group-item full-span">
+            <label class="field-title">Tindakan Radiologi Cito <span class="req">*</span></label>
+            <select name="radiologyAction" [(ngModel)]="radiologyAction" class="form-ctrl">
+              <option value="CT Scan Kepala Polos (Non-Contrast)">CT Scan Kepala Polos (Non-Contrast) - Standar Golden Hour</option>
+              <option value="CT Scan Kepala + Kontras">CT Scan Kepala + Kontras</option>
+              <option value="CT Angiografi Serebral">CT Angiografi Serebral (CTA)</option>
+              <option value="MRI Brain Cito">MRI Brain Cito Diffusion-Weighted</option>
+              <option value="Lainnya">Pemeriksaan Radiologi Khusus Lainnya</option>
+            </select>
+          </div>
+        } @else if (getIndicatorCode() === 'gastrohepatology') {
+          <div class="form-row-duo">
+            <div class="form-group-item" style="flex: 1.3;">
+              <label class="field-title">Pemeriksaan Diagnostik</label>
+              <select name="diagnosticExam" [(ngModel)]="diagnosticExam" class="form-ctrl">
+                <option value="Endoskopi Saluran Cerna Atas (SCBA)">Endoskopi SCBA</option>
+                <option value="Kolonoskopi Cito">Kolonoskopi Cito</option>
+                <option value="USG Abdomen Cito">USG Abdomen Cito Doppler</option>
+                <option value="Pemeriksaan Darah Lengkap & Faal Hemostasis Cito">Lab Hemostasis Cito</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+            <div class="form-group-item" style="flex: 1;">
+              <label class="field-title">Jam Request Lab</label>
+              <input type="time" name="requestTimeOnly" [(ngModel)]="requestTimeOnly" class="form-ctrl">
+            </div>
+          </div>
+        } @else if (getIndicatorCode() === 'oncology') {
+          <div class="form-row-duo">
+            <div class="form-group-item" style="flex: 1.4;">
+              <label class="field-title">Antibiotik IV Spektrum Luas</label>
+              <input type="text" name="antibioticName" [(ngModel)]="antibioticName" placeholder="Contoh: Meropenem 1g IV" class="form-ctrl">
+            </div>
+            <div class="form-group-item" style="flex: 1;">
+              <label class="field-title">Jam Resep Cito</label>
+              <input type="time" name="prescriptionTimeOnly" [(ngModel)]="prescriptionTimeOnly" class="form-ctrl">
+            </div>
+          </div>
+        } @else if (getIndicatorCode() === 'mom-children') {
+          <div class="form-group-item full-span">
+            <label class="field-title">Kategori Triage Maternal</label>
+            <select name="triageLevel" [(ngModel)]="triageLevel" class="form-ctrl">
+              <option value="Level 1 - Resusitasi (Gawat Darurat Mengancam Jiwa)">Level 1 - Resusitasi (Eklampsia / Syok)</option>
+              <option value="Level 2 - Emergent (Kondisi Sangat Kritis)">Level 2 - Emergent (Inpartu / KPD Cito)</option>
+              <option value="Level 3 - Urgent (Kondisi Mendesak)">Level 3 - Urgent (Kondisi Mendesak)</option>
+            </select>
+          </div>
+        } @else {
+          <div class="form-group-item full-span">
+            <div class="inline-info-badge">
+              <span>⏱️ Indikator Waktu-Kritis door-to-event. Pastikan pencatatan jam tiba & jam selesai akurat.</span>
+            </div>
+          </div>
+        }
+
+        <!-- Keterangan Klinis & Kendala (Auto-resizing Textbox) -->
+        <div class="form-group-item full-span" style="margin-top: 2px;">
+          <label class="field-title">
+            Keterangan Klinis / Catatan Kendala
+            @if (previewMinutes !== null && !previewCompliant) {
+              <span class="badge-mandatory-highlight">⚠️ Wajib Diisi (Target Terlampaui)</span>
+            } @else {
+              <span class="hint-optional">(Opsional jika target tercapai)</span>
+            }
+          </label>
+          <textarea
+            name="clinicalNotes"
+            [(ngModel)]="clinicalNotes"
+            rows="1"
+            (input)="autoResize($event.target)"
+            placeholder="Catatan kendala / justifikasi klinis (kotak otomatis menyesuaikan ukuran)..."
+            class="form-ctrl input-auto-resize"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═════════ ACTION FOOTER (ACROSS BOTTOM) ═════════ -->
+    <div class="clinical-form-footer full-width-footer">
+      <div class="footer-target-recap">
+        <span class="recap-lbl">Target Standar:</span>
+        <span class="recap-val">{{ activeIndicator?.targetMinutes }} Menit</span>
+        <span class="dot-sep">•</span>
+        <span class="recap-lbl">Durasi Respon:</span>
+        <span class="recap-val bold" [class.text-green]="previewMinutes !== null && previewCompliant" [class.text-red]="previewMinutes !== null && !previewCompliant">
+          {{ previewMinutes !== null ? (previewMinutes + ' Menit') : '--' }}
+        </span>
+      </div>
+
+      <div class="footer-buttons-group">
+        <button type="button" class="btn-action-cancel" [disabled]="submitting" (click)="goBack()">
+          Batal
+        </button>
+
+        @if (!isEditMode) {
+          <button type="button" class="btn-action-continuous" [disabled]="submitting" (click)="saveCase(true)" title="Simpan data kasus ini dan langsung siap input kasus baru berikutnya">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Simpan & Input Lagi</span>
+          </button>
+        }
+
+        <button type="button" class="btn-action-save" [disabled]="submitting || isClosed" (click)="saveCase(false)">
+          @if (submitting) {
+            <div class="btn-spinner-sm"></div>
+            <span>{{ isEditMode ? 'Menyimpan Perubahan...' : 'Menyimpan...' }}</span>
+          } @else {
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>{{ isEditMode ? 'Simpan Perubahan Kasus' : 'Simpan Kasus' }}</span>
+          }
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+</div>

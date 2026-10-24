@@ -1,0 +1,738 @@
+<div class="dashboard-container">
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Memuat formulir audit indikator mutu...</p>
+    </div>
+  }
+
+  @if (!loading && indicator) {
+    <div class="form-page-layout">
+      
+      <!-- Top Navigation & Breadcrumb -->
+      <div class="form-header-bar">
+        <a [routerLink]="['/nsi-indicators', indicator.id]" class="btn-back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Kembali ke {{ indicator.name }}</span>
+        </a>
+
+        <div class="form-badges">
+          <span class="cat-chip">{{ indicator.categoryName }}</span>
+          <span class="target-chip">Target: {{ indicator.targetPercentage }}% Kepatuhan SPO</span>
+          <span *ngIf="isEditMode" class="edit-badge">Status: {{ existingStatusText }}</span>
+        </div>
+      </div>
+
+      <!-- TOP STEPPER: Lifecycle & Approval Timeline (Kapan Diinput, Diajukan, Diapprove Kanit, Kadept, NQ Corp) -->
+      <div class="stepper-card-banner">
+        <div class="stepper-card-header">
+          <div class="stepper-title-wrap">
+            <span class="stepper-icon">⏱️</span>
+            <div>
+              <h4 class="stepper-main-title">Status Alur Persetujuan & Verifikasi Audit</h4>
+              <p class="stepper-sub-title">Pelacakan linimasa waktu penyerahan berkas hingga verifikasi Corporate</p>
+            </div>
+          </div>
+
+          <div class="stepper-header-actions" *ngIf="isEditMode">
+            <span class="stepper-status-chip" [class.verified]="existingStatus === 5" [class.pending]="existingStatus > 0 && existingStatus < 5" [class.draft]="existingStatus === 0">
+              {{ existingStatus === 5 ? '✓ Terverifikasi Penuh' : (existingStatus === 0 ? 'Draft' : 'Sedang Diproses (' + existingStatusText + ')') }}
+            </span>
+            @if (isAdmin) {
+              @if (existingStatus < 5) {
+                <button type="button" class="btn-stepper-quick-verify" (click)="quickVerifyCurrent()" [disabled]="submitting" title="Verifikasi Langsung sebagai Admin">
+                  ✓ Verifikasi Sekarang (Admin)
+                </button>
+              }
+              @if (existingStatus === 5) {
+                <button type="button" class="btn-stepper-unverify" (click)="quickUnverifyCurrent()" [disabled]="submitting" title="Batalkan status verifikasi">
+                  ↺ Batalkan Verifikasi
+                </button>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="stepper-track-wrap">
+          <!-- Step 1: Diinput & Diajukan (PIC) -->
+          <div class="stepper-node" [ngClass]="getStepStatus(1)">
+            <div class="node-circle">
+              <span class="node-icon" *ngIf="getStepStatus(1) === 'completed'">✓</span>
+              <span class="node-num" *ngIf="getStepStatus(1) !== 'completed'">1</span>
+            </div>
+            <div class="node-content">
+              <div class="node-title">1. Diinput &amp; Diajukan</div>
+              <div class="node-actor">{{ getStepActor(1) }}</div>
+              <div class="node-date" *ngIf="getStepDate(1)">
+                {{ getStepDate(1) | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+              <div class="node-date empty" *ngIf="!getStepDate(1)">-</div>
+              <span class="node-pill" [ngClass]="getStepStatus(1)">
+                {{ getStepStatus(1) === 'completed' ? 'Diajukan' : 'Sedang Mengisi' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="stepper-connector" [class.active]="existingStatus >= 2"></div>
+
+          <!-- Step 2: Validasi PSQO (L1) -->
+          <div class="stepper-node" [ngClass]="getStepStatus(2)">
+            <div class="node-circle">
+              <span class="node-icon" *ngIf="getStepStatus(2) === 'completed'">✓</span>
+              <span class="node-num" *ngIf="getStepStatus(2) !== 'completed'">2</span>
+            </div>
+            <div class="node-content">
+              <div class="node-title">2. Validasi PSQO (L1)</div>
+              <div class="node-actor">{{ getStepActor(2) }}</div>
+              <div class="node-date" *ngIf="getStepDate(2)">
+                {{ getStepDate(2) | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+              <div class="node-date empty" *ngIf="!getStepDate(2)">-</div>
+              <span class="node-pill" [ngClass]="getStepStatus(2)">
+                {{ getStepStatus(2) === 'completed' ? 'Tervalidasi' : (getStepStatus(2) === 'current' ? 'Menunggu' : 'Antrean') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="stepper-connector" [class.active]="existingStatus >= 3"></div>
+
+          <!-- Step 3: Approve Kanit (L2) -->
+          <div class="stepper-node" [ngClass]="getStepStatus(3)">
+            <div class="node-circle">
+              <span class="node-icon" *ngIf="getStepStatus(3) === 'completed'">✓</span>
+              <span class="node-num" *ngIf="getStepStatus(3) !== 'completed'">3</span>
+            </div>
+            <div class="node-content">
+              <div class="node-title">3. Approve Kanit (L2)</div>
+              <div class="node-actor">{{ getStepActor(3) }}</div>
+              <div class="node-date" *ngIf="getStepDate(3)">
+                {{ getStepDate(3) | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+              <div class="node-date empty" *ngIf="!getStepDate(3)">-</div>
+              <span class="node-pill" [ngClass]="getStepStatus(3)">
+                {{ getStepStatus(3) === 'completed' ? 'Disetujui' : (getStepStatus(3) === 'current' ? 'Menunggu' : 'Antrean') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="stepper-connector" [class.active]="existingStatus >= 4"></div>
+
+          <!-- Step 4: Verifikasi & Selesai Kadept NQ (L3 - Final) -->
+          <div class="stepper-node" [ngClass]="getStepStatus(4)">
+            <div class="node-circle">
+              <span class="node-icon" *ngIf="getStepStatus(4) === 'completed'">★</span>
+              <span class="node-num" *ngIf="getStepStatus(4) !== 'completed'">4</span>
+            </div>
+            <div class="node-content">
+              <div class="node-title">4. Verifikasi Kadept NQ</div>
+              <div class="node-actor">{{ getStepActor(4) }}</div>
+              <div class="node-date" *ngIf="getStepDate(4)">
+                {{ getStepDate(4) | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+              <div class="node-date empty" *ngIf="!getStepDate(4)">-</div>
+              <span class="node-pill" [ngClass]="getStepStatus(4)">
+                {{ getStepStatus(4) === 'completed' ? 'Terverifikasi (Final)' : (getStepStatus(4) === 'current' ? 'Menunggu Verifikasi' : 'Antrean') }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Form Grid (Left: Form Inputs, Right: Live Summary Panel) -->
+      <div class="form-grid-container">
+        
+        <!-- LEFT COLUMN: Main Form Cards -->
+        <div class="form-main-column">
+          <!-- Card 1: Identitas Pasien & Unit Pelayanan -->
+          <div class="form-card">
+            <div class="form-card-header">
+              <span class="card-step-badge">1</span>
+              <div>
+                <h3 class="card-title">Identitas Pasien & Unit Pelayanan</h3>
+                <p class="card-sub">Data unit kerja, tanggal audit, dan nomor rekam medis pasien yang diobservasi.</p>
+              </div>
+            </div>
+
+            <div class="form-fields-grid">
+              <!-- Rumah Sakit -->
+              <div class="form-group">
+                <label class="form-label">Rumah Sakit <span class="required">*</span></label>
+                <select [(ngModel)]="hospitalSiteId" (ngModelChange)="onSiteChange($event)" class="form-input">
+                  <option *ngFor="let s of sites" [value]="s.id">{{ s.name }}</option>
+                </select>
+              </div>
+
+              <!-- Unit Kerja Keperawatan -->
+              <div class="form-group">
+                <label class="form-label">Unit Keperawatan <span class="required">*</span></label>
+                <select [(ngModel)]="hospitalUnitId" class="form-input">
+                  <option *ngFor="let u of filteredUnits" [value]="u.id">{{ u.name }} ({{ u.code }})</option>
+                </select>
+              </div>
+
+              <!-- Tanggal Pelaksanaan Audit -->
+              <div class="form-group">
+                <label class="form-label">Tanggal Pelaksanaan Audit <span class="required">*</span></label>
+                <input type="date" [(ngModel)]="auditDate" class="form-input">
+              </div>
+
+              <!-- Periode Bulan -->
+              <div class="form-group">
+                <label class="form-label">Periode Bulan <span class="required">*</span></label>
+                <input type="month" [(ngModel)]="submissionMonth" class="form-input">
+              </div>
+
+              <!-- No. Rekam Medis (RM) Pasien -->
+              <div class="form-group">
+                <label class="form-label">No. Rekam Medis Pasien (No. RM) <span class="required">*</span></label>
+                <input type="text" [(ngModel)]="currentItem.patientIdentifier" placeholder="Contoh: RM-102941" class="form-input font-mono font-bold">
+              </div>
+
+              <!-- Nama Pasien -->
+              <div class="form-group">
+                <label class="form-label">Nama Pasien</label>
+                <input type="text" [(ngModel)]="currentItem.patientName" placeholder="Contoh: Tn. Bambang" class="form-input">
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Parameter Klinis Raw Data Pasien (Format Dokumen NSI) -->
+          <div class="form-card">
+            <div class="form-card-header">
+              <span class="card-step-badge">2</span>
+              <div>
+                <h3 class="card-title">Parameter Klinis Raw Data Pasien</h3>
+                <p class="card-sub">
+                  <span class="font-semibold text-primary">Format Dokumen: </span>
+                  <span *ngIf="rawDataCategory === 'REK_MED'" class="cat-tag-pill">Rekam Medis (5 Kriteria: Ada, Tepat Waktu, Dapat Dibaca, Autentikasi, Lengkap)</span>
+                  <span *ngIf="rawDataCategory === 'NCP'" class="cat-tag-pill">Nursing Care Plan (Kedatangan, Pembuatan NCP &lt; 7 Jam, Kesesuaian)</span>
+                  <span *ngIf="rawDataCategory === 'RNC'" class="cat-tag-pill">Respons Bel Perawat (Waktu Bel Ditekan, Direspon, Durasi &le; 3 Menit)</span>
+                  <span *ngIf="rawDataCategory === 'EDUKASI'" class="cat-tag-pill">Kepatuhan Edukasi (Orientasi, Jatuh, Plebitis, Cuci Tangan, Luka, Discharge)</span>
+                  <span *ngIf="rawDataCategory === 'VITAL'" class="cat-tag-pill">Monitoring TTV (Kriteria Pasien, Waktu Tiba, Ketepatan Waktu Ulang)</span>
+                  <span *ngIf="rawDataCategory === 'PAIN'" class="cat-tag-pill">Tata Laksana Nyeri (Analgetik IV, Skala Nyeri, Evaluasi Post Analgetik, Asesmen Ulang)</span>
+                  <span *ngIf="rawDataCategory === 'EWS'" class="cat-tag-pill">Early Warning System (Jam Monitoring, Skor, Lapor DPJP, Frekuensi Naik, CPPT)</span>
+                  <span *ngIf="rawDataCategory === 'GENERIC' || rawDataCategory === 'TIME_BASED'" class="cat-tag-pill">Checklist Kepatuhan SPO Pasien</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- 2.1 FORM RAW DATA: REKAM MEDIS (8 Indikator) -->
+            <div *ngIf="rawDataCategory === 'REK_MED'" class="clinical-form-body">
+              <div class="criteria-card-grid">
+                <!-- 1. ADA -->
+                <div class="criterion-item-card" [class.active]="currentItem.criteriaAda && !currentItem.isNa">
+                  <div class="crit-header">
+                    <span class="crit-number">1</span>
+                    <span class="crit-title">Dokumen Ada / Tersedia di Berkas</span>
+                  </div>
+                  <p class="crit-desc">Formulir rekam medis fisik/elektronik tersedia pada status pasien.</p>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.criteriaAda" [disabled]="currentItem.isNa" (click)="currentItem.criteriaAda = true; calculateItemCompliance(currentItem)">
+                      ✓ 1 (Ada)
+                    </button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.criteriaAda" [disabled]="currentItem.isNa" (click)="currentItem.criteriaAda = false; calculateItemCompliance(currentItem)">
+                      0 (Tidak Ada)
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 2. TEPAT WAKTU -->
+                <div class="criterion-item-card" [class.active]="currentItem.criteriaTepatWaktu && !currentItem.isNa">
+                  <div class="crit-header">
+                    <span class="crit-number">2</span>
+                    <span class="crit-title">Ketepatan Waktu Pengisian</span>
+                  </div>
+                  <p class="crit-desc">Pengisian pengkajian/berkas diselesaikan tepat waktu sesuai target SPO.</p>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.criteriaTepatWaktu" [disabled]="currentItem.isNa" (click)="currentItem.criteriaTepatWaktu = true; calculateItemCompliance(currentItem)">
+                      ✓ 1 (Tepat Waktu)
+                    </button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.criteriaTepatWaktu" [disabled]="currentItem.isNa" (click)="currentItem.criteriaTepatWaktu = false; calculateItemCompliance(currentItem)">
+                      0 (Terlambat)
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 3. DAPAT DIBACA -->
+                <div class="criterion-item-card" [class.active]="currentItem.criteriaDapatDibaca && !currentItem.isNa">
+                  <div class="crit-header">
+                    <span class="crit-number">3</span>
+                    <span class="crit-title">Dapat Dibaca / Jelas</span>
+                  </div>
+                  <p class="crit-desc">Tulisan tangan atau format elektronik jelas, terstruktur, dan mudah dipahami.</p>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.criteriaDapatDibaca" [disabled]="currentItem.isNa" (click)="currentItem.criteriaDapatDibaca = true; calculateItemCompliance(currentItem)">
+                      ✓ 1 (Dapat Dibaca)
+                    </button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.criteriaDapatDibaca" [disabled]="currentItem.isNa" (click)="currentItem.criteriaDapatDibaca = false; calculateItemCompliance(currentItem)">
+                      0 (Tidak Terbaca)
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 4. DIAUTENTIFIKASI -->
+                <div class="criterion-item-card" [class.active]="currentItem.criteriaAutentikasi && !currentItem.isNa">
+                  <div class="crit-header">
+                    <span class="crit-number">4</span>
+                    <span class="crit-title">Autentikasi (Nama & TTD)</span>
+                  </div>
+                  <p class="crit-desc">Terdapat identitas nama jelas dan tanda tangan / verifikasi tenaga medis.</p>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.criteriaAutentikasi" [disabled]="currentItem.isNa" (click)="currentItem.criteriaAutentikasi = true; calculateItemCompliance(currentItem)">
+                      ✓ 1 (Diautentifikasi)
+                    </button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.criteriaAutentikasi" [disabled]="currentItem.isNa" (click)="currentItem.criteriaAutentikasi = false; calculateItemCompliance(currentItem)">
+                      0 (Tidak Ada TTD)
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 5. LENGKAP -->
+                <div class="criterion-item-card" [class.active]="currentItem.criteriaLengkap && !currentItem.isNa">
+                  <div class="crit-header">
+                    <span class="crit-number">5</span>
+                    <span class="crit-title">Kelengkapan Pengisian Berkas</span>
+                  </div>
+                  <p class="crit-desc">Seluruh komponen formulir rekam medis terisi lengkap tanpa bagian kosong.</p>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.criteriaLengkap" [disabled]="currentItem.isNa" (click)="currentItem.criteriaLengkap = true; calculateItemCompliance(currentItem)">
+                      ✓ 1 (Lengkap)
+                    </button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.criteriaLengkap" [disabled]="currentItem.isNa" (click)="currentItem.criteriaLengkap = false; calculateItemCompliance(currentItem)">
+                      0 (Belum Lengkap)
+                    </button>
+                  </div>
+                </div>
+
+                <!-- N/A OPTION -->
+                <div class="criterion-item-card na-card" [class.active]="currentItem.isNa">
+                  <div class="crit-header">
+                    <span class="crit-number">NA</span>
+                    <span class="crit-title">Not Applicable (Tidak Berlaku)</span>
+                  </div>
+                  <p class="crit-desc">Tandai jika berkas rekam medis ini tidak berlaku untuk kasus pasien ini.</p>
+                  <label class="na-checkbox-label">
+                    <input type="checkbox" [(ngModel)]="currentItem.isNa" (ngModelChange)="calculateItemCompliance(currentItem)" class="na-checkbox">
+                    <span>Tandai sebagai N/A (Dikecualikan dari audit)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Score & Compliance Evaluation Box -->
+              <div class="eval-summary-banner" [class.eval-good]="currentItem.isCompliant" [class.eval-bad]="!currentItem.isCompliant">
+                <div class="eval-left">
+                  <span class="eval-label">Capaian Kelengkapan Pasien ini:</span>
+                  <span class="eval-score">{{ getRekamMedisScore(currentItem) }}%</span>
+                </div>
+                <div class="eval-badge">
+                  {{ currentItem.isCompliant ? '✓ Kepatuhan Terpenuhi (Numerator = 1)' : '⚠️ Belum Memenuhi Standar 100% (Numerator = 0)' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 2.2 FORM RAW DATA: NCP (Nursing Care Plan) -->
+            <div *ngIf="rawDataCategory === 'NCP'" class="clinical-form-body">
+              <div class="form-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Diagnosa Medis Pasien</label>
+                  <input type="text" [(ngModel)]="currentItem.diagnosis" placeholder="Contoh: STEMI Anteroseptal / Hipertensi" class="form-input">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Diagnosa Keperawatan</label>
+                  <input type="text" [(ngModel)]="currentItem.ncpDiagnosis" placeholder="Contoh: Nyeri Akut b.d Agen Pencedera Fisiologis" class="form-input">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Waktu Pasien Tiba di Ruangan (hh:mm) <span class="required">*</span></label>
+                  <input type="time" [(ngModel)]="currentItem.roomArrivalTime" class="form-input text-center font-bold">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Waktu NCP Selesai Dibuat (hh:mm) <span class="required">*</span></label>
+                  <input type="time" [(ngModel)]="currentItem.ncpCreatedTime" class="form-input text-center font-bold">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Jumlah NCP Pasien <span class="required">*</span></label>
+                  <input type="number" min="1" [(ngModel)]="currentItem.ncpCount" placeholder="Contoh: 2" class="form-input font-bold">
+                </div>
+              </div>
+
+              <div class="duo-toggle-cards">
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info">
+                    <strong>NCP Dibuat &lt; 7 Jam dari Pasien Tiba?</strong>
+                    <p>Standar mutu mewajibkan Nursing Care Plan disusun dalam waktu kurang dari 7 jam.</p>
+                  </div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isNcpUnder7h" (click)="currentItem.isNcpUnder7h = true; calculateItemCompliance(currentItem)">
+                      ✓ Ya (&lt; 7 Jam)
+                    </button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isNcpUnder7h" (click)="currentItem.isNcpUnder7h = false; calculateItemCompliance(currentItem)">
+                      ✗ Terlambat (&gt; 7 Jam)
+                    </button>
+                  </div>
+                </div>
+
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info">
+                    <strong>Kesesuaian NCP dengan Standar Asuhan?</strong>
+                    <p>Rencana asuhan keperawatan sesuai dengan pedoman klinis dan diagnosa medis pasien.</p>
+                  </div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isNcpCompliant" (click)="currentItem.isNcpCompliant = true; calculateItemCompliance(currentItem)">
+                      ✓ Sesuai SPO
+                    </button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isNcpCompliant" (click)="currentItem.isNcpCompliant = false; calculateItemCompliance(currentItem)">
+                      ✗ Tidak Sesuai
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Evaluasi NCP -->
+              <div class="eval-summary-banner" [class.eval-good]="currentItem.isCompliant" [class.eval-bad]="!currentItem.isCompliant">
+                <div class="eval-left">
+                  <span class="eval-label">Hasil Evaluasi NCP:</span>
+                  <span class="eval-score">{{ currentItem.isCompliant ? 'PATUH' : 'TIDAK PATUH' }}</span>
+                </div>
+                <div class="eval-badge">
+                  {{ currentItem.isCompliant ? '✓ Kepatuhan Terpenuhi (Numerator = 1)' : '⚠️ Belum Memenuhi Standar (Numerator = 0)' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 2.3 FORM RAW DATA: RNC (Respons Bel Perawat) -->
+            <div *ngIf="rawDataCategory === 'RNC'" class="clinical-form-body">
+              <div class="form-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Nomor Kamar / Bed Pasien <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="currentItem.roomNumber" placeholder="Contoh: Kamar 702-B" class="form-input">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Waktu Bel Ditekan Pasien (hh:mm) <span class="required">*</span></label>
+                  <input type="time" [(ngModel)]="currentItem.callTime" (ngModelChange)="calculateItemCompliance(currentItem)" class="form-input text-center font-bold">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Waktu Bel Direspon Perawat (hh:mm) <span class="required">*</span></label>
+                  <input type="time" [(ngModel)]="currentItem.responseTime" (ngModelChange)="calculateItemCompliance(currentItem)" class="form-input text-center font-bold">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Durasi Waktu Respons</label>
+                  <div class="computed-box">
+                    ⏱️ <strong>{{ currentItem.durationMinutes || 0 }} Menit</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="eval-summary-banner" [class.eval-good]="currentItem.isCompliant" [class.eval-bad]="!currentItem.isCompliant">
+                <div class="eval-left">
+                  <span class="eval-label">Evaluasi Respons Bel:</span>
+                  <span class="eval-score">{{ (currentItem.durationMinutes || 0) }} Menit</span>
+                </div>
+                <div class="eval-badge">
+                  {{ currentItem.isCompliant ? '✓ Sesuai Target Standar (&le; 3 Menit)' : '⚠️ Overtime Melebihi 3 Menit' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 2.4 FORM RAW DATA: EDUKASI PASIEN -->
+            <div *ngIf="rawDataCategory === 'EDUKASI'" class="clinical-form-body">
+              <div class="criteria-card-grid">
+                <div class="criterion-item-card" [class.active]="currentItem.eduOrientasi">
+                  <div class="crit-header"><span class="crit-number">1</span><span class="crit-title">Orientasi Ruangan & Fasilitas</span></div>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.eduOrientasi" (click)="currentItem.eduOrientasi = true; calculateItemCompliance(currentItem)">✓ Terlaksana</button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.eduOrientasi" (click)="currentItem.eduOrientasi = false; calculateItemCompliance(currentItem)">Belum</button>
+                  </div>
+                </div>
+
+                <div class="criterion-item-card" [class.active]="currentItem.eduResikoJatuh">
+                  <div class="crit-header"><span class="crit-number">2</span><span class="crit-title">Pencegahan Risiko Jatuh</span></div>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.eduResikoJatuh" (click)="currentItem.eduResikoJatuh = true; calculateItemCompliance(currentItem)">✓ Terlaksana</button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.eduResikoJatuh" (click)="currentItem.eduResikoJatuh = false; calculateItemCompliance(currentItem)">Belum</button>
+                  </div>
+                </div>
+
+                <div class="criterion-item-card" [class.active]="currentItem.eduPlebitis">
+                  <div class="crit-header"><span class="crit-number">3</span><span class="crit-title">Pencegahan Plebitis & Infeksi</span></div>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.eduPlebitis" (click)="currentItem.eduPlebitis = true; calculateItemCompliance(currentItem)">✓ Terlaksana</button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.eduPlebitis" (click)="currentItem.eduPlebitis = false; calculateItemCompliance(currentItem)">Belum</button>
+                  </div>
+                </div>
+
+                <div class="criterion-item-card" [class.active]="currentItem.eduCuciTangan">
+                  <div class="crit-header"><span class="crit-number">4</span><span class="crit-title">Kebersihan Cuci Tangan (Hand Hygiene)</span></div>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.eduCuciTangan" (click)="currentItem.eduCuciTangan = true; calculateItemCompliance(currentItem)">✓ Terlaksana</button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.eduCuciTangan" (click)="currentItem.eduCuciTangan = false; calculateItemCompliance(currentItem)">Belum</button>
+                  </div>
+                </div>
+
+                <div class="criterion-item-card" [class.active]="currentItem.eduPerawatanLuka">
+                  <div class="crit-header"><span class="crit-number">5</span><span class="crit-title">Edukasi Perawatan Luka</span></div>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.eduPerawatanLuka" (click)="currentItem.eduPerawatanLuka = true; calculateItemCompliance(currentItem)">✓ Terlaksana</button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.eduPerawatanLuka" (click)="currentItem.eduPerawatanLuka = false; calculateItemCompliance(currentItem)">Belum</button>
+                  </div>
+                </div>
+
+                <div class="criterion-item-card" [class.active]="currentItem.eduDischarge">
+                  <div class="crit-header"><span class="crit-number">6</span><span class="crit-title">Discharge Planning (Edukasi Pulang)</span></div>
+                  <div class="crit-toggle-row">
+                    <button type="button" class="btn-crit-toggle" [class.on]="currentItem.eduDischarge" (click)="currentItem.eduDischarge = true; calculateItemCompliance(currentItem)">✓ Terlaksana</button>
+                    <button type="button" class="btn-crit-toggle off" [class.on]="!currentItem.eduDischarge" (click)="currentItem.eduDischarge = false; calculateItemCompliance(currentItem)">Belum</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="eval-summary-banner" [class.eval-good]="currentItem.isCompliant" [class.eval-bad]="!currentItem.isCompliant">
+                <div class="eval-left"><span class="eval-label">Hasil Edukasi:</span><span class="eval-score">{{ currentItem.isCompliant ? 'LENGKAP' : 'BELUM LENGKAP' }}</span></div>
+                <div class="eval-badge">{{ currentItem.isCompliant ? '✓ 6 Topik Edukasi Terpenuhi' : '⚠️ Masih ada edukasi yang belum diberikan' }}</div>
+              </div>
+            </div>
+
+            <!-- 2.5 FORM RAW DATA: MONITORING TTV -->
+            <div *ngIf="rawDataCategory === 'VITAL'" class="clinical-form-body">
+              <div class="form-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Kriteria Pasien</label>
+                  <select [(ngModel)]="currentItem.kriteriaPasien" class="form-input">
+                    <option value="Post Tindakan">Post Tindakan</option>
+                    <option value="Post Kemo">Post Kemo</option>
+                    <option value="Kondisi Tidak Stabil">Kondisi Tidak Stabil</option>
+                    <option value="Rutin">Rutin Harian</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Waktu Tiba / Selesai Tindakan</label>
+                  <input type="time" [(ngModel)]="currentItem.arrivalTime" class="form-input text-center font-bold">
+                </div>
+              </div>
+
+              <div class="duo-toggle-cards">
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info">
+                    <strong>Ketepatan Waktu Monitoring Ulang TTV?</strong>
+                    <p>Tanda-tanda vital dimonitoring ulang tepat waktu sesuai protokol interval pasien.</p>
+                  </div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isMonitoringOnTime" (click)="currentItem.isMonitoringOnTime = true; calculateItemCompliance(currentItem)">✓ Tepat Waktu</button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isMonitoringOnTime" (click)="currentItem.isMonitoringOnTime = false; calculateItemCompliance(currentItem)">✗ Terlambat</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2.6 FORM RAW DATA: TATA LAKSANA NYERI -->
+            <div *ngIf="rawDataCategory === 'PAIN'" class="clinical-form-body">
+              <div class="form-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Pemberian Analgetik IV Rutin?</label>
+                  <select [(ngModel)]="currentItem.isAnalgeticIvRoutine" class="form-input">
+                    <option [ngValue]="true">Ya (Analgetik IV)</option>
+                    <option [ngValue]="false">Tidak (Non-IV / Oral)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Kategori Skala Nyeri</label>
+                  <select [(ngModel)]="currentItem.painCategory" class="form-input">
+                    <option value="Ringan">Ringan (1-3)</option>
+                    <option value="Sedang">Sedang (4-6)</option>
+                    <option value="Tinggi">Tinggi / Berat (7-10)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nama Obat Analgetik</label>
+                  <input type="text" [(ngModel)]="currentItem.medicationName" placeholder="Contoh: Remopain IV / Fentanyl" class="form-input">
+                </div>
+              </div>
+
+              <div class="duo-toggle-cards">
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info"><strong>Evaluasi Post Pemberian Obat?</strong><p>Evaluasi efek obat dilakukan dalam 30-60 menit.</p></div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isReEvaluationPostMed" (click)="currentItem.isReEvaluationPostMed = true; calculateItemCompliance(currentItem)">✓ Ya (1)</button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isReEvaluationPostMed" (click)="currentItem.isReEvaluationPostMed = false; calculateItemCompliance(currentItem)">✗ Tidak (0)</button>
+                  </div>
+                </div>
+
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info"><strong>Asesmen Ulang Nyeri?</strong><p>Tingkat nyeri dinilai ulang dan tercatat di lembar rekam medis.</p></div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isReAssessmentPain" (click)="currentItem.isReAssessmentPain = true; calculateItemCompliance(currentItem)">✓ Ya (1)</button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isReAssessmentPain" (click)="currentItem.isReAssessmentPain = false; calculateItemCompliance(currentItem)">✗ Tidak (0)</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2.7 FORM RAW DATA: EWS (EARLY WARNING SYSTEM) -->
+            <div *ngIf="rawDataCategory === 'EWS'" class="clinical-form-body">
+              <div class="form-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Waktu Jam Monitoring EWS</label>
+                  <input type="time" [(ngModel)]="currentItem.ewsMonitoringTime" class="form-input text-center font-bold">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Total Skor EWS Pasien (0 - 20)</label>
+                  <input type="number" [(ngModel)]="currentItem.ewsScore" min="0" max="20" class="form-input text-center font-bold">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Jam Lapor ke DPJP / GP</label>
+                  <input type="time" [(ngModel)]="currentItem.dpjpReportTime" class="form-input text-center font-bold">
+                </div>
+              </div>
+
+              <div class="duo-toggle-cards">
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info"><strong>Peningkatan Frekuensi Monitoring?</strong><p>Interval observasi dipercepat sesuai respon skor EWS.</p></div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isFrequencyIncreased" (click)="currentItem.isFrequencyIncreased = true; calculateItemCompliance(currentItem)">✓ Ya (1)</button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isFrequencyIncreased" (click)="currentItem.isFrequencyIncreased = false; calculateItemCompliance(currentItem)">✗ Tidak (0)</button>
+                  </div>
+                </div>
+
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info"><strong>Ketepatan Tindak Lanjut Algoritma?</strong><p>Eskalasi klinis sesuai pedoman Code Blue / EWS.</p></div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isActionAppropriate" (click)="currentItem.isActionAppropriate = true; calculateItemCompliance(currentItem)">✓ Ya (1)</button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isActionAppropriate" (click)="currentItem.isActionAppropriate = false; calculateItemCompliance(currentItem)">✗ Tidak (0)</button>
+                  </div>
+                </div>
+
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info"><strong>Dokumentasi Terintegrasi di CPPT?</strong><p>Hasil monitoring dan instruksi DPJP terdokumentasi di CPPT.</p></div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isDocumentedInCppt" (click)="currentItem.isDocumentedInCppt = true; calculateItemCompliance(currentItem)">✓ Ya (1)</button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isDocumentedInCppt" (click)="currentItem.isDocumentedInCppt = false; calculateItemCompliance(currentItem)">✗ Tidak (0)</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2.8 FALLBACK / GENERIC -->
+            <div *ngIf="rawDataCategory === 'GENERIC' || rawDataCategory === 'TIME_BASED'" class="clinical-form-body">
+              <div class="duo-toggle-cards">
+                <div class="eval-toggle-card">
+                  <div class="eval-card-info"><strong>Kepatuhan Pelaksanaan SPO Pasien ini?</strong><p>Penerapan standar operasional prosedur pada rekam medis pasien.</p></div>
+                  <div class="eval-btn-pair">
+                    <button type="button" class="btn-eval-pill" [class.on]="currentItem.isCompliant" (click)="currentItem.isCompliant = true">✓ Sesuai (Ya)</button>
+                    <button type="button" class="btn-eval-pill off" [class.on]="!currentItem.isCompliant" (click)="currentItem.isCompliant = false">✗ Tidak Sesuai</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Card 3: Catatan Pemeriksaan Pasien & Temuan Auditor -->
+          <div class="form-card">
+            <div class="form-card-header">
+              <span class="card-step-badge">3</span>
+              <div>
+                <h3 class="card-title">Catatan Pemeriksaan Pasien & Temuan Auditor</h3>
+                <p class="card-sub">Berikan catatan hasil observasi atau kendala klinis yang ditemukan.</p>
+              </div>
+            </div>
+
+            <div class="form-fields-grid single-col">
+              <div class="form-group">
+                <label class="form-label">Catatan Spesifik Pasien ({{ currentItem.patientIdentifier }})</label>
+                <input type="text" [(ngModel)]="currentItem.notes" placeholder="Catatan hasil pemeriksaan rekam medis pasien ini..." class="form-input">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Catatan Pengajuan / Keterangan Tambahan untuk Reviewer</label>
+                <textarea [(ngModel)]="notes" rows="2" placeholder="Catatan untuk bahan review PSQO, Kanit, atau Kadept Nursing Quality..." class="form-textarea"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="form-bottom-bar">
+            <a [routerLink]="['/nsi-indicators', indicator.id]" class="btn-cancel">
+              Batal
+            </a>
+
+            <div class="right-buttons">
+              <button type="button" class="btn-submit" [disabled]="submitting" (click)="saveSubmission(true)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{{ isEditMode ? 'Simpan Perubahan Audit' : 'Simpan & Ajukan ke Approval (L1 PSQO) ➔' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Sticky Live Summary & Compliance KPI Card -->
+        <div class="form-side-column">
+          <div class="sticky-side-card">
+            <h4 class="side-card-title">RINGKASAN HASIL AUDIT</h4>
+            <div class="side-indicator-name">{{ indicator.name }}</div>
+            <div class="side-indicator-code">Kode: {{ indicator.code }}</div>
+
+            <!-- Big Rate Circle / Box -->
+            <div class="live-rate-box" [class.success]="isTargetMet" [class.warning]="!isTargetMet">
+              <span class="live-rate-num">{{ calculateRate }}%</span>
+              <span class="live-rate-label">CAPAIAN KEPATUHAN</span>
+            </div>
+
+            <!-- Observasi Pasien Stats -->
+            <div class="live-stats-list">
+              <div class="live-stat-item">
+                <span class="stat-label">Pasien yang Diobservasi</span>
+                <span class="stat-val font-mono font-bold">{{ currentItem.patientIdentifier || '-' }}</span>
+              </div>
+
+              <div class="live-stat-item">
+                <span class="stat-label">Status Kepatuhan SPO</span>
+                <span class="stat-val font-bold" [class.text-green]="currentItem.isCompliant" [class.text-red]="!currentItem.isCompliant">
+                  {{ currentItem.isCompliant ? '✓ Patuh (100%)' : '✗ Tidak Patuh (0%)' }}
+                </span>
+              </div>
+
+              <div class="live-stat-item">
+                <span class="stat-label">Target Standar Mutu</span>
+                <span class="stat-val"><strong>{{ indicator.targetPercentage }}%</strong></span>
+              </div>
+            </div>
+
+            <!-- Target Status Notification -->
+            <div class="status-alert-box" [class.alert-success]="isTargetMet" [class.alert-warning]="!isTargetMet">
+              @if (isTargetMet) {
+                <div class="alert-icon">✓</div>
+                <div class="alert-text">
+                  <strong>Memenuhi Standar Mutu</strong>
+                  <p>Capaian audit telah memenuhi target kepatuhan {{ indicator.targetPercentage }}%.</p>
+                </div>
+              } @else {
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-text">
+                  <strong>Butuh Siklus PDSA</strong>
+                  <p>Capaian di bawah target {{ indicator.targetPercentage }}%. Kepala Unit wajib menyusun Plan of Action (PDSA) setelah disetujui.</p>
+                </div>
+              }
+            </div>
+
+            <!-- Auditor Meta -->
+            <div class="auditor-box">
+              <div class="auditor-icon">👤</div>
+              <div class="auditor-info">
+                <span class="auditor-label">Auditor / Penginput:</span>
+                <strong class="auditor-name">{{ currentUser?.fullName || 'Pengguna' }}</strong>
+                <span class="auditor-role">Role: {{ currentUser?.roleDisplayName || 'Staff' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  }
+</div>

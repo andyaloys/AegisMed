@@ -1,0 +1,467 @@
+<div class="dashboard-page-wrapper" id="ugdPrintArea">
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       FORMAL HOSPITAL HEADER (PRINT / PDF ONLY)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="hospital-print-header print-only">
+    <div class="print-header-top">
+      <div class="print-logo-section">
+        <div class="print-hospital-badge">
+          <span class="cross-icon">✚</span>
+          <div class="brand-text">
+            <h2>MAYAPADA HOSPITAL</h2>
+            <span>HEALTHCARE GROUP • EMERGENCY & ACUTE CARE QUALITY DIVISION</span>
+          </div>
+        </div>
+      </div>
+      <div class="print-doc-meta">
+        <div class="doc-badge">DOKUMEN TERKONTROL</div>
+        <div class="doc-code">FORM-MUTU-IGD-REV04</div>
+      </div>
+    </div>
+
+    <div class="print-title-box">
+      <h1 class="print-title">LAPORAN EKSEKUTIF INDIKATOR MUTU PELAYANAN IGD (GOLDEN HOUR)</h1>
+      <p class="print-subtitle">Emergency Department Quality Improvement & Response Time Compliance Audit Report</p>
+    </div>
+
+    <div class="print-metadata-grid">
+      <div class="meta-item">
+        <span class="meta-label">Rumah Sakit:</span>
+        <span class="meta-val">{{ selectedSiteName }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Rentang Periode:</span>
+        <span class="meta-val">{{ filterStartDate }} s.d {{ filterEndDate }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Tanggal Cetak:</span>
+        <span class="meta-val">{{ printDate }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Dicetak Oleh:</span>
+        <span class="meta-val">{{ currentUser?.fullName || 'Petugas Mutu' }} ({{ currentUser?.roleDisplayName || currentUser?.roleName || 'Staff' }})</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════════════════════════════════
+       1. HERO HEADER BANNER & FILTER TOOLBAR
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="dash-hero-banner">
+    <div class="hero-top-row">
+      <div class="hero-title-block">
+        <div class="hero-badge-tag">
+          <span class="badge-icon">⏱️</span>
+          <span>PROJECT IMPROVEMENT INSTALASI GAWAT DARURAT (IGD)</span>
+        </div>
+        <h1 class="hero-main-title">Dashboard Mutu Pelayanan IGD (Golden Hour)</h1>
+        <p class="hero-sub-title">
+          Monitoring terpusat kecepatan respon tindakan klinis darurat 6 indikator kritis, evaluasi selisih waktu (menit), dan kepatuhan standar akreditasi Kemenkes & Mayapada Hospital Group.
+        </p>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="hero-actions-cluster no-print">
+        <button type="button" class="btn-dash-action primary" (click)="printDashboard()" title="Cetak Laporan Dashboard ke PDF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Cetak PDF</span>
+        </button>
+
+        <button type="button" class="btn-dash-action icon-only" (click)="loadDashboard()" title="Segarkan Data Real-Time">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Control Bar -->
+    <div class="hero-filter-bar no-print">
+      <!-- Semester Switcher Pills -->
+      <div class="period-switcher-group">
+        <button type="button" class="period-btn" [class.active]="activePeriodKey === 'sem1'" (click)="setQuickPeriod('sem1')">
+          Semester 1 (Jan - Jun)
+        </button>
+        <button type="button" class="period-btn" [class.active]="activePeriodKey === 'sem2'" (click)="setQuickPeriod('sem2')">
+          Semester 2 (Jul - Des)
+        </button>
+        <button type="button" class="period-btn" [class.active]="activePeriodKey === 'full'" (click)="setQuickPeriod('full')">
+          Sepanjang 2026
+        </button>
+      </div>
+
+      <!-- Date Range Inputs -->
+      <div class="filter-chip">
+        <label class="chip-label">📅 Rentang:</label>
+        <input type="date" [(ngModel)]="filterStartDate" (change)="onFilterChange()" class="chip-input-date">
+        <span class="chip-sep">s.d</span>
+        <input type="date" [(ngModel)]="filterEndDate" (change)="onFilterChange()" class="chip-input-date">
+      </div>
+
+      <!-- Site Filter (Corporate / Admin) -->
+      <div class="filter-chip" *ngIf="authService.isCorporate || authService.isAdmin">
+        <label for="igdSiteSelect" class="chip-label">🏢 Rumah Sakit:</label>
+        <select id="igdSiteSelect" [(ngModel)]="selectedSiteId" (change)="onFilterChange()" class="chip-select">
+          <option [ngValue]="undefined">Semua Rumah Sakit (Mayapada Group)</option>
+          <option *ngFor="let s of sites" [ngValue]="s.id">{{ s.name }} ({{ s.code }})</option>
+        </select>
+      </div>
+
+      <!-- Fixed Site Tag for Hospital Bound -->
+      <div class="fixed-site-pill" *ngIf="!authService.isCorporate && !authService.isAdmin && currentUser">
+        <span class="site-icon">🏥</span>
+        <span class="site-name">{{ currentUser.hospitalSiteName }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="dash-loading-card">
+      <div class="spinner-modern"></div>
+      <p>Memuat data analitik mutu pelayanan IGD (Golden Hour)...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error && !loading) {
+    <div class="dash-error-card">
+      <h3>Gagal Memuat Dashboard Mutu IGD</h3>
+      <p>{{ errorMessage }}</p>
+      <button class="btn-retry" (click)="loadDashboard()">Coba Lagi</button>
+    </div>
+  }
+
+  <!-- Dashboard Main Content -->
+  @if (!loading && !error && dashboardData) {
+    <div class="dash-content-grid">
+      
+      <!-- ══════════════════════════════════════════════════════════════════════
+           2. EXECUTIVE HIGHLIGHT TILES & GAUGE
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="exec-metrics-row">
+        
+        <!-- Circular Gauge Card -->
+        <div class="exec-gauge-card">
+          <div class="gauge-card-header">
+            <div>
+              <span class="card-tag-sm">KEPATUHAN GLOBAL</span>
+              <h2 class="gauge-card-title">Golden Hour IGD</h2>
+            </div>
+            <span class="benchmark-pill" [class.pass]="dashboardData.complianceRate >= 90" [class.fail]="dashboardData.complianceRate < 90">
+              Target: ≥ 90%
+            </span>
+          </div>
+
+          <div class="gauge-visual-wrap">
+            <svg viewBox="0 0 130 130" width="130" height="130" class="gauge-svg">
+              <circle cx="65" cy="65" r="54" fill="none" stroke="#e2e8f0" stroke-width="10" class="gauge-circle-bg" />
+              <circle cx="65" cy="65" r="54" fill="none" stroke-width="10" stroke-linecap="round"
+                      class="gauge-circle-progress"
+                      [ngClass]="getOverallProgressClass(dashboardData.complianceRate)"
+                      [style.stroke-dashoffset]="getGaugeDashOffset(dashboardData.complianceRate)" />
+            </svg>
+            <div class="gauge-center-text">
+              <span class="gauge-val" [ngClass]="getOverallScoreClass(dashboardData.complianceRate)">
+                {{ dashboardData.complianceRate }}%
+              </span>
+              <span class="gauge-sub">Kasus Tepat Waktu</span>
+            </div>
+          </div>
+
+          <div class="gauge-card-footer">
+            <span class="text-xs text-muted">Berdasarkan {{ dashboardData.totalCases }} kasus gawat darurat terpantau</span>
+          </div>
+        </div>
+
+        <!-- Metric Tile 1: Total Kasus IGD Terpantau -->
+        <div class="metric-kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-tag">VOLUME KASUS IGD</span>
+            <span class="kpi-icon-box bg-blue">🚨</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-val-row">
+              <span class="kpi-val">{{ dashboardData.totalCases }}</span>
+              <span class="kpi-unit">kasus</span>
+            </div>
+            <div class="kpi-sub-line">
+              <span class="text-emerald font-semibold">{{ dashboardData.compliantCases }} Tepat Waktu</span>
+              <span class="text-rose font-semibold" *ngIf="dashboardData.overdueCases > 0">• {{ dashboardData.overdueCases }} Melebihi Target</span>
+            </div>
+          </div>
+          <div class="kpi-progress-bar">
+            <div class="kpi-progress-fill bg-blue" [style.width.%]="dashboardData.complianceRate"></div>
+          </div>
+        </div>
+
+        <!-- Metric Tile 2: Rata-Rata Response Time -->
+        <div class="metric-kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-tag">RATA-RATA RESPON TIME</span>
+            <span class="kpi-icon-box bg-emerald">⚡</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-val-row">
+              <span class="kpi-val text-blue">{{ dashboardData.averageMinutes }}</span>
+              <span class="kpi-unit">menit</span>
+            </div>
+            <div class="kpi-sub-line">
+              <span class="text-muted">Door-to-Action rata-rata seluruh pasien</span>
+            </div>
+          </div>
+          <div class="kpi-extrema-row">
+            <span class="extrema-chip">⚡ Tercepat: <strong>{{ dashboardData.fastestMinutes }}m</strong></span>
+            <span class="extrema-chip">🐢 Terlambat: <strong>{{ dashboardData.slowestMinutes }}m</strong></span>
+          </div>
+        </div>
+
+        <!-- Metric Tile 3: Status Alur Approval IGD -->
+        <div class="metric-kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-tag">STATUS APPROVAL BERKAS</span>
+            <span class="kpi-icon-box bg-purple">📑</span>
+          </div>
+          <div class="kpi-approval-mini-list">
+            <div class="appr-item">
+              <span class="appr-label">Menunggu L1 (PSQO):</span>
+              <span class="appr-pill amber">{{ dashboardData.approvalBreakdown.submitted }}</span>
+            </div>
+            <div class="appr-item">
+              <span class="appr-label">Menunggu L2 (Kanit):</span>
+              <span class="appr-pill blue">{{ dashboardData.approvalBreakdown.approvedL1 }}</span>
+            </div>
+            <div class="appr-item">
+              <span class="appr-label">Menunggu L3 (Kadept):</span>
+              <span class="appr-pill purple">{{ dashboardData.approvalBreakdown.approvedL2 }}</span>
+            </div>
+            <div class="appr-item">
+              <span class="appr-label">Terverifikasi Final:</span>
+              <span class="appr-pill green">{{ dashboardData.approvalBreakdown.verified }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           3. KARTU KINERJA 6 INDIKATOR KECEPATAN IGD (PROJECT IMPROVEMENT)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="dash-panel-card">
+        <div class="panel-card-header">
+          <div>
+            <h2 class="panel-title">Kinerja 6 Indikator Kecepatan Klinis IGD</h2>
+            <span class="panel-subtitle">Standar batas waktu penanganan klinis gawat darurat (Kamus Profil Indikator 2026)</span>
+          </div>
+        </div>
+
+        <div class="ed-indicators-grid">
+          @for (ind of dashboardData.indicators; track ind.indicatorId) {
+            <div class="ed-ind-card" [class.unmet-card]="!ind.isTargetMet && ind.totalCases > 0">
+              <div class="ed-card-top">
+                <div class="ed-icon-title">
+                  <span class="ed-icon">{{ getIndicatorIcon(ind.indicatorName) }}</span>
+                  <div>
+                    <h3 class="ed-name">{{ ind.indicatorName }}</h3>
+                    <span class="ed-spec">{{ getIndicatorSpecialty(ind.indicatorName) }}</span>
+                  </div>
+                </div>
+                <span class="ed-target-badge">
+                  {{ ind.targetDescription }}
+                </span>
+              </div>
+
+              <!-- Compliance Score & Progress -->
+              <div class="ed-score-row">
+                <div class="ed-score-col">
+                  <span class="ed-score-num" [ngClass]="getOverallScoreClass(ind.complianceRate)">
+                    {{ ind.complianceRate }}%
+                  </span>
+                  <span class="ed-score-lbl">Kepatuhan Waktu</span>
+                </div>
+                <div class="ed-score-col right">
+                  <span class="ed-cases-num">{{ ind.compliantCases }} / {{ ind.totalCases }}</span>
+                  <span class="ed-score-lbl">Kasus Tercapai</span>
+                </div>
+              </div>
+
+              <div class="ed-progress-track">
+                <div class="ed-progress-fill" [ngClass]="getOverallProgressClass(ind.complianceRate)" [style.width.%]="ind.complianceRate"></div>
+              </div>
+
+              <!-- Time Metrics -->
+              <div class="ed-time-metrics">
+                <div class="time-item">
+                  <span class="time-lbl">Rata-Rata:</span>
+                  <span class="time-val">{{ ind.averageMinutes }} m</span>
+                </div>
+                <div class="time-item">
+                  <span class="time-lbl">Batas Maks:</span>
+                  <span class="time-val">{{ ind.targetMinutes }} m</span>
+                </div>
+                <div class="time-item">
+                  <span class="time-lbl">Tercepat:</span>
+                  <span class="time-val text-emerald">{{ ind.fastestMinutes }} m</span>
+                </div>
+                <div class="time-item">
+                  <span class="time-lbl">Terlambat:</span>
+                  <span class="time-val" [class.text-rose]="ind.slowestMinutes > ind.targetMinutes">{{ ind.slowestMinutes }} m</span>
+                </div>
+              </div>
+
+              <!-- Footer Action -->
+              <div class="ed-card-footer">
+                <span class="ed-status-tag" [class.pass]="ind.isTargetMet || ind.totalCases === 0" [class.fail]="!ind.isTargetMet && ind.totalCases > 0">
+                  {{ ind.totalCases === 0 ? 'Belum Ada Kasus' : (ind.isTargetMet ? '✓ Memenuhi Target (≥ 90%)' : '⚠️ Evaluasi Keterlambatan') }}
+                </span>
+                <a class="btn-card-link no-print" [routerLink]="['/project-improvement-igd', ind.indicatorId]" title="Buka Tabel Data Kasus & Stepper Linimasa">
+                  Lihat Kasus ➔
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           4. DUAL VISUAL ANALYTICS: RESPON TIME VS TARGET & TREN BULANAN
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="dash-two-col-layout">
+        
+        <!-- Left: Respon Time Aktual vs Target Standar -->
+        <div class="dash-panel-card">
+          <div class="panel-card-header">
+            <div>
+              <h2 class="panel-title">Komparasi Respon Time vs Batas Target</h2>
+              <span class="panel-subtitle">Perbandingan rata-rata respon time aktual (menit) dengan batas maksimum</span>
+            </div>
+          </div>
+
+          <div class="compare-bars-list">
+            @for (ind of dashboardData.indicators; track ind.indicatorId) {
+              <div class="compare-bar-item">
+                <div class="compare-info-row">
+                  <span class="compare-name">{{ ind.indicatorName }}</span>
+                  <span class="compare-time">
+                    <strong>{{ ind.averageMinutes }} m</strong> / batas {{ ind.targetMinutes }} m
+                  </span>
+                </div>
+                <div class="compare-progress-wrap">
+                  <!-- Target marker line position based on proportion -->
+                  <div class="compare-bar-track">
+                    <div class="compare-bar-fill"
+                         [ngClass]="ind.averageMinutes <= ind.targetMinutes ? 'bg-emerald' : 'bg-rose'"
+                         [style.width.%]="ind.targetMinutes > 0 ? Math.min((ind.averageMinutes / (ind.targetMinutes * 1.5)) * 100, 100) : 0"></div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Right: Tren Kepatuhan Bulanan IGD -->
+        <div class="dash-panel-card">
+          <div class="panel-card-header">
+            <div>
+              <h2 class="panel-title">Tren Kepatuhan Kasus Bulanan</h2>
+              <span class="panel-subtitle">Persentase kasus tepat waktu per bulan</span>
+            </div>
+            <span class="benchmark-line-legend">
+              <span class="legend-dash"></span> Target 90%
+            </span>
+          </div>
+
+          <div class="trend-bars-container">
+            @for (trend of dashboardData.monthlyTrends; track trend.month) {
+              <div class="trend-bar-col">
+                <div class="trend-bar-track">
+                  <!-- 90% Target threshold line -->
+                  <div class="target-threshold-line" style="bottom: 90%;"></div>
+                  <!-- Bar Fill -->
+                  <div class="trend-bar-fill" 
+                       [ngClass]="getOverallProgressClass(trend.complianceRate)"
+                       [style.height.%]="trend.complianceRate > 0 ? trend.complianceRate : 4"
+                       [title]="trend.month + ': ' + trend.complianceRate + '% (' + trend.totalCases + ' kasus, rata-rata ' + trend.averageMinutes + 'm)'">
+                    <span class="bar-val-tooltip" *ngIf="trend.complianceRate > 0">{{ trend.complianceRate }}%</span>
+                  </div>
+                </div>
+                <div class="trend-bar-label">{{ trend.month }}</div>
+                <div class="trend-bar-sub">{{ trend.totalCases }} kasus</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           5. PERINGKAT KEPATUHAN LINTAS RUMAH SAKIT (SITE COMPLIANCE)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="dash-panel-card" *ngIf="dashboardData.siteRankings && dashboardData.siteRankings.length > 0">
+        <div class="panel-card-header">
+          <div>
+            <h2 class="panel-title">Peringkat Kecepatan & Kepatuhan Lintas Rumah Sakit</h2>
+            <span class="panel-subtitle">Evaluasi konsistensi respon gawat darurat antar unit rumah sakit Mayapada Group</span>
+          </div>
+        </div>
+
+        <div class="site-ranking-grid">
+          @for (site of dashboardData.siteRankings; track site.siteId; let rank = $index) {
+            <div class="site-card-rank">
+              <div class="rank-badge" [class.top-1]="rank === 0" [class.top-2]="rank === 1" [class.top-3]="rank === 2">
+                #{{ rank + 1 }}
+              </div>
+              <div class="site-meta">
+                <span class="site-name">{{ site.siteName }} ({{ site.siteCode }})</span>
+                <span class="site-cases">{{ site.totalCases }} Kasus • {{ site.compliantCases }} Tepat Waktu • Rata-rata: {{ site.averageMinutes }}m</span>
+              </div>
+              <div class="site-score-block">
+                <span class="site-score-val" [ngClass]="getOverallScoreClass(site.complianceRate)">
+                  {{ site.complianceRate }}%
+                </span>
+                <span class="site-status-tag" [class.pass]="site.isTargetMet" [class.fail]="!site.isTargetMet">
+                  {{ site.isTargetMet ? 'Tercapai (≥ 90%)' : 'Perlu Evaluasi' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           6. FORMAL SIGNATURE VERIFICATION BLOCK (PRINT / PDF ONLY)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="print-signature-section print-only">
+        <div class="sig-note">
+          Laporan ini dihasilkan secara otomatis melalui Sistem AegisMed Healthcare Quality Management System. Data respon time pelayanan darurat telah tervalidasi sesuai standar clinical pathway dan otorisasi komite mutu pelayanan darurat.
+        </div>
+        <div class="sig-grid">
+          <div class="sig-box">
+            <span class="sig-role">Disiapkan Oleh (L1):</span>
+            <span class="sig-title">Petugas Pengumpul / Tim Mutu IGD</span>
+            <div class="sig-space"></div>
+            <div class="sig-line"></div>
+            <span class="sig-name">( .................................................... )</span>
+            <span class="sig-date">Tanggal: ____ / ____ / 2026</span>
+          </div>
+
+          <div class="sig-box">
+            <span class="sig-role">Diverifikasi Oleh (L2):</span>
+            <span class="sig-title">Kepala Instalasi Gawat Darurat (Kanit IGD)</span>
+            <div class="sig-space"></div>
+            <div class="sig-line"></div>
+            <span class="sig-name">( .................................................... )</span>
+            <span class="sig-date">Tanggal: ____ / ____ / 2026</span>
+          </div>
+
+          <div class="sig-box">
+            <span class="sig-role">Disetujui Oleh (L3):</span>
+            <span class="sig-title">Direktur Pelayanan Medis / Direktur RS</span>
+            <div class="sig-space"></div>
+            <div class="sig-line"></div>
+            <span class="sig-name">( .................................................... )</span>
+            <span class="sig-date">Tanggal: ____ / ____ / 2026</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+</div>

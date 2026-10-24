@@ -1,0 +1,293 @@
+<div class="pdsa-container">
+  <!-- Banner -->
+  <div class="pdsa-header-banner">
+    <div class="banner-title-col">
+      <div class="banner-badge">Continuous Quality Improvement</div>
+      <h1 class="banner-title">📋 Analisis & Rencana Tindak Lanjut (PDSA)</h1>
+      <p class="banner-desc">
+        Penyusunan Plan of Action (PoA) dan siklus PDSA (Plan-Do-Study-Act) saat indikator mutu tidak memenuhi target standar. Disusun oleh Kepala Unit dan diverifikasi oleh Kadept Nursing Quality.
+      </p>
+    </div>
+    <div class="banner-actions">
+      <button class="btn-primary-action" (click)="openCreateModal()">
+        <span>+ Buat Tindak Lanjut (PDSA)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="pdsa-controls-panel">
+    <div class="filters-inline">
+      <div class="filter-item">
+        <label>Periode Bulan:</label>
+        <input type="month" [(ngModel)]="filterMonth" (change)="loadPdsaActions()" class="filter-input-date" />
+      </div>
+
+      <div class="filter-item" *ngIf="authService.isCorporate || authService.isAdmin">
+        <label>Rumah Sakit:</label>
+        <select [(ngModel)]="filterSiteId" (change)="loadPdsaActions()" class="filter-select">
+          <option value="">Semua Rumah Sakit</option>
+          <option *ngFor="let s of sites" [value]="s.id">{{ s.name }} ({{ s.code }})</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Status:</label>
+        <select [(ngModel)]="filterStatus" (change)="loadPdsaActions()" class="filter-select">
+          <option value="">Semua Status</option>
+          <option value="1">Diajukan Kanit</option>
+          <option value="2">Disetujui Kadept NQ</option>
+          <option value="3">Perlu Revisi</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="pdsa-table">
+        <thead>
+          <tr>
+            <th>Bulan & Unit</th>
+            <th>Indikator Mutu</th>
+            <th class="text-center">Capaian Saat Ini</th>
+            <th>Analisa Penyebab (Root Cause)</th>
+            <th>Rencana Perbaikan</th>
+            <th>PIC & Target</th>
+            <th class="text-center">Status</th>
+            <th class="text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="8" class="text-center py-8">
+              <div class="spinner-small"></div>
+              <span>Memuat data PDSA...</span>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && actions.length === 0">
+            <td colspan="8" class="text-center py-8 text-muted">
+              Belum ada data formulir PDSA untuk periode ini. Jika ada indikator di bawah target, buat PDSA baru dengan menekan <strong>"+ Buat Tindak Lanjut (PDSA)"</strong>.
+            </td>
+          </tr>
+          <tr *ngFor="let a of actions" class="hover-row">
+            <td class="font-medium whitespace-nowrap">
+              <div class="font-semibold">{{ a.month }}</div>
+              <div class="unit-tag">{{ a.hospitalUnitName }}</div>
+              <div class="text-xs text-muted">{{ a.hospitalSiteName }}</div>
+            </td>
+            <td>
+              <div class="font-semibold text-primary">{{ a.indicatorName }}</div>
+              <div class="text-xs text-muted">{{ a.indicatorCode }}</div>
+            </td>
+            <td class="text-center">
+              <div class="achievement-pill warning">{{ a.achievementRate }}%</div>
+              <div class="text-xs text-muted">{{ a.numerator }} / {{ a.denominator }} sampel</div>
+            </td>
+            <td class="max-w-xs text-sm">
+              <div class="line-clamp-2" title="{{ a.rootCauseAnalysis }}">{{ a.rootCauseAnalysis }}</div>
+            </td>
+            <td class="max-w-xs text-sm">
+              <div class="line-clamp-2" title="{{ a.improvementPlan }}">{{ a.improvementPlan }}</div>
+            </td>
+            <td class="whitespace-nowrap text-sm">
+              <div class="font-medium">{{ a.pic }}</div>
+              <div class="text-xs text-muted" *ngIf="a.targetDate">Target: {{ a.targetDate | slice:0:10 }}</div>
+            </td>
+            <td class="text-center">
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(a.status)">
+                {{ getStatusLabel(a.status) }}
+              </span>
+              <div *ngIf="a.revisionNotes" class="text-xs text-danger mt-1 italic">
+                ⚠️ "{{ a.revisionNotes }}"
+              </div>
+            </td>
+            <td class="text-right whitespace-nowrap">
+              <button class="btn-detail" (click)="viewDetail(a)">
+                <span>Review / Detail</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create PDSA Modal -->
+  <div class="modal-backdrop" *ngIf="createModalOpen" (click)="closeCreateModal()"></div>
+  <div class="modal-dialog modal-lg" *ngIf="createModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">📋 Formulir PDSA & Rencana Tindak Lanjut</h2>
+          <p class="modal-subtitle">Wajib diisi oleh Kepala Unit saat indikator mutu bulanan tidak mencapai target.</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeCreateModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>Rumah Sakit</label>
+            <select [(ngModel)]="newPdsa.siteId" (change)="onSiteChange(newPdsa.siteId)" class="form-input">
+              <option *ngFor="let site of sites" [value]="site.id">{{ site.name }} ({{ site.code }})</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Unit Keperawatan</label>
+            <select [(ngModel)]="newPdsa.unitId" class="form-input">
+              <option *ngFor="let unit of units" [value]="unit.id">{{ unit.name }} ({{ unit.code }})</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Bulan Evaluasi</label>
+            <input type="month" [(ngModel)]="newPdsa.month" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Indikator Mutu yang Tidak Tercapai</label>
+          <select [(ngModel)]="newPdsa.indicatorId" class="form-input font-medium">
+            <option *ngFor="let ind of indicators" [value]="ind.id">
+              [{{ ind.code }}] {{ ind.name }} (Target: {{ ind.targetPercentage }}%)
+            </option>
+          </select>
+        </div>
+
+        <div class="form-grid-3 mt-3">
+          <div class="form-group">
+            <label>Capaian Realisasi (%)</label>
+            <input type="number" [(ngModel)]="newPdsa.achievementRate" class="form-input" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label>Numerator (Ya)</label>
+            <input type="number" [(ngModel)]="newPdsa.numerator" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Denominator (Total)</label>
+            <input type="number" [(ngModel)]="newPdsa.denominator" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label class="text-danger font-semibold">1. Analisa Penyebab Ketidaktercapaian (Root Cause)</label>
+          <textarea [(ngModel)]="newPdsa.rootCauseAnalysis" rows="3" class="form-input" placeholder="Jelaskan faktor manusia, metode, sarana, atau kendala operasional..."></textarea>
+        </div>
+
+        <div class="form-group mt-3">
+          <label class="text-primary font-semibold">2. Rencana Perbaikan (Improvement Action Plan)</label>
+          <textarea [(ngModel)]="newPdsa.improvementPlan" rows="3" class="form-input" placeholder="Langkah konkrit perbaikan yang akan dieksekusi tim unit..."></textarea>
+        </div>
+
+        <div class="form-grid-2 mt-3">
+          <div class="form-group">
+            <label>3. Penanggung Jawab (PIC)</label>
+            <input type="text" [(ngModel)]="newPdsa.pic" class="form-input" placeholder="Nama perawat / PJ Shift" />
+          </div>
+          <div class="form-group">
+            <label>4. Target Waktu Penyelesaian</label>
+            <input type="date" [(ngModel)]="newPdsa.targetDate" class="form-input" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCreateModal()">Batal</button>
+        <button class="btn-primary" [disabled]="submitting" (click)="submitPdsa()">
+          {{ submitting ? 'Menyimpan...' : 'Submit ke Kadept Nursing Quality' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail & Review Modal -->
+  <div class="modal-backdrop" *ngIf="detailModalOpen" (click)="closeDetailModal()"></div>
+  <div class="modal-dialog modal-lg" *ngIf="detailModalOpen && selectedPdsa">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <span class="status-badge" [ngClass]="getStatusBadgeClass(selectedPdsa.status)">
+            {{ getStatusLabel(selectedPdsa.status) }}
+          </span>
+          <h2 class="modal-title mt-1">{{ selectedPdsa.indicatorName }}</h2>
+          <p class="modal-subtitle">{{ selectedPdsa.hospitalUnitName }} • {{ selectedPdsa.hospitalSiteName }} • Periode {{ selectedPdsa.month }}</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeDetailModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="pdsa-review-card">
+          <div class="review-section">
+            <div class="review-label">Capaian Indikator:</div>
+            <div class="review-val text-danger font-bold text-lg">
+              {{ selectedPdsa.achievementRate }}% ({{ selectedPdsa.numerator }} / {{ selectedPdsa.denominator }} sampel)
+            </div>
+          </div>
+
+          <div class="review-section mt-3">
+            <div class="review-label">Analisa Penyebab Ketidaktercapaian:</div>
+            <div class="review-content-box">{{ selectedPdsa.rootCauseAnalysis }}</div>
+          </div>
+
+          <div class="review-section mt-3">
+            <div class="review-label">Rencana Perbaikan:</div>
+            <div class="review-content-box">{{ selectedPdsa.improvementPlan }}</div>
+          </div>
+
+          <div class="review-section-flex mt-3">
+            <div>
+              <span class="review-label">Penanggung Jawab (PIC):</span>
+              <span class="font-semibold ml-2">{{ selectedPdsa.pic }}</span>
+            </div>
+            <div *ngIf="selectedPdsa.targetDate">
+              <span class="review-label">Target Penyelesaian:</span>
+              <span class="font-semibold ml-2">{{ selectedPdsa.targetDate | slice:0:10 }}</span>
+            </div>
+          </div>
+
+          <div class="review-section mt-3" *ngIf="selectedPdsa.revisionNotes">
+            <div class="review-label text-danger">Catatan Revisi dari Kadept NQ:</div>
+            <div class="review-content-box border-danger">{{ selectedPdsa.revisionNotes }}</div>
+          </div>
+        </div>
+
+        <!-- Verification Box for Kadept NQ -->
+        <div class="action-box-card mt-4" *ngIf="canVerify(selectedPdsa) && selectedPdsa.status !== 2">
+          <div class="action-box-header">
+            <h4>⭐ Verifikasi Kadept Nursing Quality</h4>
+            <p>Periksa ketepatan analisa dan rencana perbaikan sebelum menyetujui formulir PDSA ini.</p>
+          </div>
+
+          <!-- Revise Input -->
+          <div *ngIf="showReviseBox" class="reject-box">
+            <label class="text-danger font-medium">Catatan Revisi untuk Kanit:</label>
+            <textarea [(ngModel)]="reviewNotes" class="form-input mt-1" rows="2" placeholder="Tulis instruksi penyesuaian rencana perbaikan..."></textarea>
+            <div class="mt-2 flex gap-2">
+              <button class="btn-danger-confirm" [disabled]="submitting" (click)="executeWorkflow('revise')">
+                Kirim Catatan Revisi
+              </button>
+              <button class="btn-secondary" (click)="showReviseBox = false">Batal</button>
+            </div>
+          </div>
+
+          <div *ngIf="!showReviseBox" class="action-buttons-row">
+            <div class="notes-input-wrapper">
+              <input type="text" [(ngModel)]="reviewNotes" class="form-input" placeholder="Catatan persetujuan (opsional)..." />
+            </div>
+            <button class="btn-approve" [disabled]="submitting" (click)="executeWorkflow('verify')">
+              ✅ Setujui & Verifikasi PDSA
+            </button>
+            <button class="btn-reject" (click)="showReviseBox = true">
+              ✏️ Minta Revisi
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>

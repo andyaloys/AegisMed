@@ -1,0 +1,205 @@
+<div class="user-mgmt-container">
+  <!-- Banner -->
+  <div class="user-header-banner">
+    <div class="banner-title-col">
+      <div class="banner-badge">Role-Based Access Control (RBAC)</div>
+      <h1 class="banner-title">👥 Manajemen Pengguna & Hak Akses (User Management)</h1>
+      <p class="banner-desc">
+        Kelola akun pengguna NursQI, tetapkan peran berjenjang (PSQO, Kanit, Kadept NQ, NQ Corporate), dan tentukan batasan akses unit atau rumah sakit.
+      </p>
+    </div>
+    <div class="banner-actions">
+      <button class="btn-primary-action" (click)="openCreateModal()">
+        <span>+ Tambah Pengguna Baru</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="user-controls-panel">
+    <div class="filters-inline">
+      <div class="filter-item">
+        <label>Cari Pengguna:</label>
+        <input type="text" [(ngModel)]="searchQuery" (input)="loadUsers()" placeholder="Nama, email, username..." class="filter-input-search" />
+      </div>
+
+      <div class="filter-item">
+        <label>Rumah Sakit:</label>
+        <select [(ngModel)]="filterSiteId" (change)="loadUsers()" class="filter-select">
+          <option value="">Semua Rumah Sakit</option>
+          <option *ngFor="let s of sites" [value]="s.id">{{ s.name }} ({{ s.code }})</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Peran / Role:</label>
+        <select [(ngModel)]="filterRoleId" (change)="loadUsers()" class="filter-select">
+          <option value="">Semua Peran</option>
+          <option *ngFor="let r of roles" [value]="r.id">{{ r.displayName }} ({{ r.scope }})</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Nama Lengkap</th>
+            <th>Username & Email</th>
+            <th>Peran (Role)</th>
+            <th>Cakupan (Scope)</th>
+            <th>Penugasan RS & Unit</th>
+            <th class="text-center">Status</th>
+            <th class="text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="7" class="text-center py-8">
+              <div class="spinner-small"></div>
+              <span>Memuat data pengguna...</span>
+            </td>
+          </tr>
+          <tr *ngFor="let u of users" class="hover-row">
+            <td class="font-medium whitespace-nowrap">
+              <div class="user-name-title">{{ u.fullName }}</div>
+              <div class="text-xs text-muted" *ngIf="u.lastLoginDate">Login terakhir: {{ u.lastLoginDate | slice:0:16 | date:'dd MMM yyyy, HH:mm' }}</div>
+            </td>
+            <td>
+              <div class="font-mono text-sm">{{ u.username }}</div>
+              <div class="text-xs text-muted">{{ u.email }}</div>
+            </td>
+            <td>
+              <div class="role-badge font-semibold">{{ u.roleDisplayName }}</div>
+            </td>
+            <td>
+              <span class="scope-pill" [ngClass]="getRoleBadgeClass(u.roleScope)">
+                {{ u.roleScope }}
+              </span>
+            </td>
+            <td>
+              <div class="font-medium">{{ u.hospitalSiteName }}</div>
+              <div class="unit-assigned" *ngIf="u.hospitalUnitName">Unit: {{ u.hospitalUnitName }}</div>
+              <div class="text-xs text-muted" *ngIf="!u.hospitalUnitName">Semua Unit (Hospital / Corp)</div>
+            </td>
+            <td class="text-center">
+              <button class="status-toggle-btn" [class.active]="u.isActive" (click)="toggleActive(u)" title="Klik untuk mengubah status">
+                {{ u.isActive ? '✓ Aktif' : '✗ Non-Aktif' }}
+              </button>
+            </td>
+            <td class="text-right whitespace-nowrap">
+              <div class="flex gap-2 justify-end">
+                <button class="btn-switch-role" (click)="switchToUser(u)" title="Simulasi login sebagai user ini">
+                  👤 Coba Peran
+                </button>
+                <button class="btn-reset-pw" (click)="openResetModal(u)" title="Reset Password">
+                  🔑 Reset
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div class="modal-backdrop" *ngIf="createModalOpen" (click)="closeCreateModal()"></div>
+  <div class="modal-dialog modal-md" *ngIf="createModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">👤 Tambah Pengguna Baru</h2>
+          <p class="modal-subtitle">Daftarkan pengguna baru dan berikan peran serta otorisasi RS / Unit.</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeCreateModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nama Lengkap</label>
+          <input type="text" [(ngModel)]="newUser.fullName" class="form-input" placeholder="Misal: Ns. Rina Kartika, S.Kep" />
+        </div>
+
+        <div class="form-grid-2 mt-3">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" [(ngModel)]="newUser.username" class="form-input" placeholder="rina.kartika" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="newUser.email" class="form-input" placeholder="rina@aegismed.id" />
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Password Awal</label>
+          <input type="password" [(ngModel)]="newUser.password" class="form-input" placeholder="Minimal 6 karakter" />
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Peran (Role & Wewenang)</label>
+          <select [(ngModel)]="newUser.roleId" class="form-input font-medium">
+            <option *ngFor="let r of roles" [value]="r.id">
+              {{ r.displayName }} — Cakupan: {{ r.scope }} (Level {{ r.level }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-grid-2 mt-3">
+          <div class="form-group">
+            <label>Rumah Sakit</label>
+            <select [(ngModel)]="newUser.hospitalSiteId" (change)="onSiteChange(newUser.hospitalSiteId)" class="form-input">
+              <option *ngFor="let s of sites" [value]="s.id">{{ s.name }} ({{ s.code }})</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Unit Spesifik (Opsional)</label>
+            <select [(ngModel)]="newUser.hospitalUnitId" class="form-input">
+              <option value="">Semua Unit (Hospital / Corp)</option>
+              <option *ngFor="let u of units" [value]="u.id">{{ u.name }} ({{ u.code }})</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCreateModal()">Batal</button>
+        <button class="btn-primary" [disabled]="submitting" (click)="createUser()">
+          {{ submitting ? 'Menyimpan...' : 'Simpan Pengguna' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div class="modal-backdrop" *ngIf="resetModalOpen" (click)="closeResetModal()"></div>
+  <div class="modal-dialog modal-sm" *ngIf="resetModalOpen && selectedUserForReset">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">🔑 Reset Password</h2>
+          <p class="modal-subtitle">Ganti password untuk <strong>{{ selectedUserForReset.fullName }}</strong> ({{ selectedUserForReset.username }})</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeResetModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Password Baru</label>
+          <input type="password" [(ngModel)]="newPasswordInput" class="form-input" placeholder="Minimal 6 karakter" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeResetModal()">Batal</button>
+        <button class="btn-primary" [disabled]="submitting" (click)="resetPassword()">
+          {{ submitting ? 'Menyimpan...' : 'Simpan Password Baru' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

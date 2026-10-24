@@ -1,0 +1,82 @@
+/* 3-Level NSI Navigation Styles */
+.sub-category-group {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.sub-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  background: rgba(14, 165, 233, 0.04);
+}
+
+.sub-category-header:hover {
+  background: var(--bg-overlay-hover);
+  color: var(--text-primary);
+}
+
+.sub-cat-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-cat-icon {
+  color: var(--color-info);
+  flex-shrink: 0;
+}
+
+.sub-cat-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-cat-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.sub-collapsible-menu {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 10px;
+  margin-left: 8px;
+  border-left: 1px dashed var(--border-color);
+  margin-top: 3px;
+}
+
+.sub-collapsible-menu.expanded {
+  display: flex;
+}
+
+.level-3-link {
+  font-size: 0.76rem !important;
+  padding: 6px 10px !important;
+  gap: 8px;
+  border-radius: 5px;
+}
+
+.level-3-link .sub-bullet {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.level-3-link:hover .sub-bullet, .level-3-link.active .sub-bullet {
+  color: var(--color-info);
+}

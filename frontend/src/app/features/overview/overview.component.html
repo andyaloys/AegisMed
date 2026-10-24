@@ -2,7 +2,7 @@
 @if (loading) {
   <div class="loading-state">
     <div class="spinner"></div>
-    <p>Memuat data overview...</p>
+    <p>Memuat data eksekutif AegisMed...</p>
   </div>
 }
 
@@ -16,181 +16,359 @@
 }
 
 @if (!loading && !error && data) {
-  <div class="header-section">
-    <div class="title-area">
-      <div class="title-with-badge">
-        <h1>Quality Management Group Dashboard</h1>
-        <span class="hospital-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          {{ getSelectedSiteName() }}
-        </span>
-      </div>
-      <p>Standard & Compliance Monitoring across Mayapada Hospital Sites | Periode: {{ getSelectedPeriodLabel() }}</p>
-    </div>
-    <div class="action-area">
-      <button class="btn-primary" (click)="loadOverviewData()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-        Refresh Data
-      </button>
-    </div>
-  </div>
-
-  <!-- Horizontal Date Filter Card -->
-  <div class="dashboard-filter-card section-card">
-    <div class="filter-card-title">
-      🏢 Periode Analisis Dashboard (Bulan Mulai s.d Selesai)
-    </div>
-    <div class="filter-card-inputs">
-      <div class="filter-field">
-        <label>Dari Bulan:</label>
-        <input type="month" name="filterStartMonth" [(ngModel)]="filterStartMonth" (ngModelChange)="onDashboardDateFilterChange()" class="month-input-dashboard">
-      </div>
-      <div class="filter-field">
-        <label>Sampai Bulan:</label>
-        <input type="month" name="filterEndMonth" [(ngModel)]="filterEndMonth" (ngModelChange)="onDashboardDateFilterChange()" class="month-input-dashboard">
-      </div>
-    </div>
-  </div>
-
-  <!-- ED Golden Hour Indicators Widget -->
-  <div class="ed-section">
-    <div class="ed-section-title">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span>Golden Hour &#64; Mayapada - 5 Time-Critical ED Indicators</span>
-    </div>
+  <div class="overview-dashboard-wrapper">
     
-    <div class="ed-grid">
-      @for (indicator of data.edCompliance; track indicator.indicatorName) {
-        <div class="ed-card" [ngClass]="getEdComplianceClass(indicator.complianceRate)">
-          <div class="ed-header">
+    <!-- ══════════════════════════════════════════════════════════════════════
+         1. EXECUTIVE HERO BANNER WITH SEMESTER SWITCHER & QUICK ACTIONS
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="exec-hero-banner">
+      <div class="exec-hero-top">
+        <div class="exec-title-block">
+          <div class="exec-badge-row">
+            <span class="exec-hospital-tag">Mayapada Hospital Group</span>
+            <span class="exec-dot-sep">•</span>
+            <span class="exec-scope-tag">Clinical Quality & Golden Hour Monitoring</span>
+          </div>
+          <h1 class="exec-main-heading">
+            Executive Quality & Golden Hour Dashboard
+          </h1>
+          <p class="exec-sub-heading">
+            Pengawasan real-time kepatuhan kecepatan penanganan pasien gawat darurat dan audit mutu klinis terintegrasi.
+          </p>
+        </div>
+
+        <!-- Quick Controls: Semester Switcher & Quick Actions -->
+        <div class="exec-controls-cluster">
+          <!-- Semester Switcher Pills -->
+          <div class="exec-period-switcher">
+            <button type="button" 
+                    class="period-switch-btn" 
+                    [class.active]="activePeriodKey === 'sem1'" 
+                    (click)="setQuickPeriod('sem1')">
+              Semester 1 (Jan - Jun)
+            </button>
+            <button type="button" 
+                    class="period-switch-btn" 
+                    [class.active]="activePeriodKey === 'sem2'" 
+                    (click)="setQuickPeriod('sem2')">
+              Semester 2 (Jul - Des)
+            </button>
+            <button type="button" 
+                    class="period-switch-btn" 
+                    [class.active]="activePeriodKey === 'full'" 
+                    (click)="setQuickPeriod('full')">
+              Sepanjang 2026
+            </button>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="exec-action-buttons">
+            <a class="exec-btn primary" [routerLink]="['/ugd-cases', 'a0000000-a000-a000-a000-a00000000000', 'input']" title="Input Kasus Baru">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ Input Kasus Baru</span>
+            </a>
+
+            <a class="exec-btn secondary" routerLink="/capa" title="Kelola Tindakan CAPA">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>Kelola CAPA</span>
+            </a>
+
+            <button type="button" class="exec-btn outline" (click)="exportExecutiveReport()" title="Unduh Dokumen Laporan Eksekutif (.xlsx)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+              <span>Unduh Excel</span>
+            </button>
+
+            <button type="button" class="exec-btn icon-only" (click)="loadOverviewData()" title="Segarkan Data Real-Time">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         2. EXECUTIVE DUAL HIGHLIGHT: CIRCULAR GAUGE + 4 KPI METRIC TILES
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="exec-metrics-hero-grid">
+      
+      <!-- Left: Circular Compliance Donut Gauge -->
+      <div class="exec-donut-card">
+        <div class="donut-card-header">
+          <div>
+            <h2 class="donut-card-title">Kepatuhan Golden Hour Global</h2>
+            <span class="donut-card-sub">Berdasarkan total kasus UGD yang terpantau</span>
+          </div>
+          <span class="benchmark-pill" [class.pass]="data.summary.averageAuditScore >= 80" [class.fail]="data.summary.averageAuditScore < 80">
+            Target Standar: 80%
+          </span>
+        </div>
+
+        <div class="donut-visual-container">
+          <!-- SVG Donut Chart -->
+          <div class="svg-donut-wrapper">
+            <svg viewBox="0 0 130 130" class="svg-donut-chart">
+              <!-- Background circle -->
+              <circle cx="65" cy="65" r="54" class="donut-circle-bg" />
+              <!-- Benchmark 80% target marker arc (subtle indicator) -->
+              <circle cx="65" cy="65" r="54" class="donut-circle-benchmark" />
+              <!-- Active progress stroke -->
+              <circle cx="65" cy="65" r="54" 
+                      class="donut-circle-progress"
+                      [class.excellent]="data.summary.averageAuditScore >= 90"
+                      [class.good]="data.summary.averageAuditScore >= 80 && data.summary.averageAuditScore < 90"
+                      [class.warning]="data.summary.averageAuditScore < 80"
+                      [style.stroke-dashoffset]="getDonutDashOffset()" />
+            </svg>
+            <div class="donut-inner-text">
+              <span class="donut-number">{{ data.summary.averageAuditScore }}%</span>
+              <span class="donut-label">Kepatuhan</span>
+            </div>
+          </div>
+
+          <!-- Donut Side Breakdown Statistics -->
+          <div class="donut-side-stats">
+            <div class="stat-pill-row success">
+              <div class="stat-indicator-dot success"></div>
+              <div class="stat-text-group">
+                <span class="stat-bold-val">{{ getTotalCompliantCases() }} Kasus</span>
+                <span class="stat-muted-lbl">Tepat Waktu (Memenuhi Standar)</span>
+              </div>
+            </div>
+
+            <div class="stat-pill-row danger">
+              <div class="stat-indicator-dot danger"></div>
+              <div class="stat-text-group">
+                <span class="stat-bold-val">{{ getTotalNonCompliantCases() }} Kasus</span>
+                <span class="stat-muted-lbl">Melebihi Target Standar (Overdue)</span>
+              </div>
+            </div>
+
+            <div class="stat-target-meta">
+              <span class="meta-icon">🎯</span>
+              <span>Batas aman akreditasi rumah sakit adalah <strong>80.0%</strong>. Performa saat ini: 
+                <strong [class.text-green]="data.summary.averageAuditScore >= 80" [class.text-red]="data.summary.averageAuditScore < 80">
+                  {{ data.summary.averageAuditScore >= 80 ? 'Memenuhi Standar Aman' : 'Di Bawah Standar Minimum' }}
+                </strong>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: 4 Clean Executive Metric Tiles -->
+      <div class="exec-kpi-quad-grid">
+        
+        <!-- Tile 1: Total Kasus -->
+        <div class="exec-kpi-tile">
+          <div class="tile-top-row">
+            <span class="tile-label">TOTAL KASUS & AUDIT</span>
+            <div class="tile-icon-box blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+          </div>
+          <div class="tile-main-number">{{ data.summary.totalAudits }}</div>
+          <div class="tile-subtext">
+            <span class="text-blue font-semibold">{{ getTotalCompliantCases() }} kasus</span> tercatat sesuai standar
+          </div>
+        </div>
+
+        <!-- Tile 2: Rata-rata Skor -->
+        <div class="exec-kpi-tile">
+          <div class="tile-top-row">
+            <span class="tile-label">RATA-RATA SKOR KEPATUHAN</span>
+            <div class="tile-icon-box teal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="tile-main-number">{{ data.summary.averageAuditScore }}%</div>
+          <div class="tile-subtext">
+            @if (data.summary.averageAuditScore >= 80) {
+              <span class="text-green font-semibold">✓ Di atas ambang batas</span> target 80%
+            } @else {
+              <span class="text-red font-semibold">⚠ Di bawah ambang batas</span> target 80%
+            }
+          </div>
+        </div>
+
+        <!-- Tile 3: Tindakan CAPA Aktif -->
+        <div class="exec-kpi-tile">
+          <div class="tile-top-row">
+            <span class="tile-label">TINDAKAN CAPA AKTIF</span>
+            <div class="tile-icon-box amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+          </div>
+          <div class="tile-main-number">{{ data.summary.openCapa + data.summary.inProgressCapa }}</div>
+          <div class="tile-subtext">
+            <span class="text-amber font-semibold">{{ data.summary.openCapa }} Open</span>, {{ data.summary.inProgressCapa }} In-Progress
+          </div>
+        </div>
+
+        <!-- Tile 4: Temuan Kritis & Overdue -->
+        <div class="exec-kpi-tile">
+          <div class="tile-top-row">
+            <span class="tile-label">TEMUAN KRITIS & OVERDUE</span>
+            <div class="tile-icon-box red">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+          </div>
+          <div class="tile-main-number">{{ data.summary.criticalIssues + data.summary.overdueCapa }}</div>
+          <div class="tile-subtext">
+            <span class="text-teal font-semibold">{{ data.summary.resolvedCapa }} tindakan</span> telah tuntas diselesaikan
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         3. CRITICAL ATTENTION ALERT BANNER (TICKER)
+         ══════════════════════════════════════════════════════════════════════ -->
+    @if (getTotalNonCompliantCases() > 0) {
+      <div class="exec-alert-ticker">
+        <div class="ticker-left">
+          <span class="ticker-pulse-badge">PERHATIAN MUTU</span>
+          <span class="ticker-text">
+            Terdapat <strong>{{ getTotalNonCompliantCases() }} kasus gawat darurat</strong> dengan respon waktu melebihi batas standar emas pada periode <strong>{{ getSelectedPeriodLabel() }}</strong>.
+          </span>
+        </div>
+        <div class="ticker-action">
+          <a routerLink="/capa" class="ticker-link-btn">
+            <span>Buka Modul CAPA & Tindakan Korektif</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         4. INTERACTIVE EMERGENCY GOLDEN HOUR SPECIALTY CARDS (CLICKABLE)
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="content-panel-card" style="margin-top: 24px;">
+      <div class="panel-header-row">
+        <div class="panel-title-group">
+          <span class="panel-badge-icon">⏱️</span>
+          <div>
+            <h3 class="panel-title">Indikator Mutu Waktu-Kritis UGD (Golden Hour)</h3>
+            <span class="panel-subtitle">Standar kecepatan respon tindakan gawat darurat klinis di Mayapada Hospital</span>
+          </div>
+        </div>
+
+        <div class="panel-header-search">
+          <div class="table-search-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" [(ngModel)]="quickSearchText" placeholder="Cari indikator..." class="table-search-input">
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Specialty Cards Grid -->
+      <div class="exec-specialty-grid">
+        @for (indicator of getFilteredEdCompliance(); track indicator.indicatorName) {
+          <a class="exec-specialty-card" 
+             [routerLink]="['/ugd-cases', getIndicatorRouteId(indicator)]"
+             [ngClass]="getEdComplianceClass(indicator.complianceRate)"
+             title="Klik untuk membuka riwayat data kasus {{ indicator.indicatorName }}">
+            
+            <div class="spec-card-top">
+              <div class="spec-icon-box">
+                <span class="spec-emoji">{{ getIndicatorIcon(indicator.indicatorName) }}</span>
+              </div>
+              <div class="spec-score-tag" [ngClass]="getEdComplianceClass(indicator.complianceRate)">
+                {{ indicator.complianceRate }}% Kepatuhan
+              </div>
+            </div>
+
+            <div class="spec-card-title-group">
+              <h4 class="spec-name">{{ indicator.indicatorName }}</h4>
+              <span class="spec-target-desc">{{ indicator.targetDescription }}</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="spec-progress-track">
+              <div class="spec-progress-fill" [style.width.%]="indicator.complianceRate" [ngClass]="getEdComplianceClass(indicator.complianceRate)"></div>
+            </div>
+
+            <!-- Footer: Cases Ratio & Drilldown Link -->
+            <div class="spec-card-footer">
+              <span class="spec-ratio-text">
+                <strong>{{ indicator.compliantCases }} / {{ indicator.totalCases }}</strong> Kasus Tercapai
+              </span>
+              <span class="spec-drilldown-link">
+                Lihat Kasus
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+
+          </a>
+        }
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         5. DUAL TABLES: HOSPITAL QUALITY LEADERBOARD & RECENT CAPA ACTIONS
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="dual-tables-grid" id="site-performance" style="margin-top: 24px;">
+      
+      <!-- Table 1: Hospital Quality Leaderboard (Podium Ranking) -->
+      <div class="content-panel-card">
+        <div class="panel-header-row">
+          <div class="panel-title-group">
+            <span class="panel-badge-icon">🏆</span>
             <div>
-              <div class="ed-indicator-name">{{ indicator.indicatorName }}</div>
-              <div class="ed-target-desc">{{ indicator.targetDescription }}</div>
-            </div>
-            <div class="ed-rate" [ngClass]="getEdComplianceClass(indicator.complianceRate)">
-              {{ indicator.complianceRate }}%
+              <h3 class="panel-title">Peringkat Kualitas Unit Rumah Sakit</h3>
+              <span class="panel-subtitle">Leaderboard kepatuhan penanganan UGD di Mayapada Hospital Group</span>
             </div>
           </div>
-          
-          <div class="progress-bar-container">
-            <div class="progress-bar" 
-                 [style.width.%]="indicator.complianceRate"
-                 [ngClass]="getEdComplianceClass(indicator.complianceRate)">
-            </div>
-          </div>
-          
-          <div class="ed-meta">
-            <span><strong>{{ indicator.compliantCases }} / {{ indicator.totalCases }}</strong> Kasus Terpenuhi</span>
-            <span class="badge" [ngClass]="getEdComplianceClass(indicator.complianceRate)">
-              @if (indicator.complianceRate >= 90) { STRONG }
-              @else if (indicator.complianceRate >= 80) { WARNING }
-              @else { ACTION REQ }
-            </span>
-          </div>
         </div>
-      }
-    </div>
-  </div>
 
-  <!-- Summary Metrics Grid -->
-  <div class="summary-grid" style="margin-top: 32px;">
-    <!-- Total IGD Cases -->
-    <div class="metric-card blue">
-      <div class="card-header">
-        <span>TOTAL IGD CASES YTD</span>
-        <div class="card-icon" style="background-color: var(--color-info-bg);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        </div>
-      </div>
-      <div class="card-value">{{ data.summary.totalAudits }}</div>
-      <div class="card-footer">
-        Avg. IGD compliance score <span class="highlight">{{ data.summary.averageAuditScore }}%</span>
-      </div>
-    </div>
-
-    <!-- Total CAPAs -->
-    <div class="metric-card warning">
-      <div class="card-header">
-        <span>ACTIVE CAPA ACTIONS</span>
-        <div class="card-icon" style="background-color: var(--color-warning-bg);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-      </div>
-      <div class="card-value">{{ data.summary.totalCapa }}</div>
-      <div class="card-footer">
-        <span class="highlight">{{ data.summary.openCapa }} Open</span> | {{ data.summary.inProgressCapa }} In-Progress
-      </div>
-    </div>
-
-    <!-- Critical Issues -->
-    <div class="metric-card danger">
-      <div class="card-header">
-        <span>CRITICAL THREATS</span>
-        <div class="card-icon" style="background-color: var(--color-danger-bg);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        </div>
-      </div>
-      <div class="card-value">{{ data.summary.criticalIssues }}</div>
-      <div class="card-footer">
-        Requires <span class="highlight" style="color: var(--color-danger);">immediate corrective action</span>
-      </div>
-    </div>
-
-    <!-- Resolved Issues -->
-    <div class="metric-card success">
-      <div class="card-header">
-        <span>RESOLVED ISSUES</span>
-        <div class="card-icon" style="background-color: var(--color-success-bg);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        </div>
-      </div>
-      <div class="card-value">{{ data.summary.resolvedCapa }}</div>
-      <div class="card-footer">
-        Action rate <span class="highlight" style="color: var(--color-success);">{{ getResolutionRate() }}%</span> completed
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Dashboard Grid -->
-  <div class="dashboard-grid">
-    <!-- Left Panel: Compliance & Actions (stretched to 100% width) -->
-    <div class="left-panel" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
-      <!-- Site Compliance Card -->
-      <div class="section-card">
-        <div class="section-title">
-          <span>Rata-Rata Kepatuhan UGD per Rumah Sakit</span>
-        </div>
-        <div class="table-wrapper">
-          <table class="custom-table">
+        <div class="table-responsive-wrapper">
+          <table class="apbn-styled-table">
             <thead>
               <tr>
-                <th>Hospital Site</th>
-                <th>Code</th>
-                <th>Total Kasus UGD</th>
-                <th>Open CAPAs</th>
-                <th>Kepatuhan UGD</th>
-                <th>Status</th>
+                <th style="width: 50px; text-align: center;">RANK</th>
+                <th>RUMAH SAKIT</th>
+                <th>KODE</th>
+                <th style="text-align: center;">TOTAL KASUS</th>
+                <th style="text-align: center;">OPEN CAPA</th>
+                <th style="text-align: center;">KEPATUHAN</th>
+                <th>STATUS</th>
               </tr>
             </thead>
             <tbody>
-              @for (site of getFilteredSiteCompliance(); track site.siteName) {
-                <tr>
-                  <td class="highlight">{{ site.siteName }}</td>
-                  <td>{{ site.siteCode }}</td>
-                  <td>{{ site.auditsCount }}</td>
-                  <td>{{ site.openCapaCount }}</td>
-                  <td>
-                    <span class="score-badge" [ngClass]="getScoreClass(site.averageScore)">
+              @for (site of getRankedHospitalSites(); track site.siteName; let idx = $index) {
+                <tr [class.highlight-top-rank]="idx === 0">
+                  <td style="text-align: center;">
+                    <span class="rank-medal-pill" [ngClass]="getMedalBadge(idx).cssClass">
+                      {{ getMedalBadge(idx).medal }}
+                    </span>
+                  </td>
+                  <td class="font-semibold text-primary">
+                    {{ site.siteName }}
+                    @if (idx === 0) {
+                      <span class="top-performer-tag">Top Quality</span>
+                    }
+                  </td>
+                  <td><span class="site-code-pill">{{ site.siteCode }}</span></td>
+                  <td style="text-align: center; font-weight: 600;">{{ site.auditsCount }}</td>
+                  <td style="text-align: center;">
+                    <span class="open-capa-count" [class.has-open]="site.openCapaCount > 0">
+                      {{ site.openCapaCount }}
+                    </span>
+                  </td>
+                  <td style="text-align: center;">
+                    <span class="score-pill-number" [ngClass]="getScoreClass(site.averageScore)">
                       {{ site.averageScore }}%
                     </span>
                   </td>
                   <td>
                     @if (site.averageScore >= 90) {
-                      <span class="badge completed" style="background-color: var(--color-success-bg); color: var(--color-success);">EXCELLENT</span>
+                      <span class="apbn-status-badge badge-green">Unggul</span>
                     } @else if (site.averageScore >= 80) {
-                      <span class="badge open" style="background-color: var(--color-info-bg); color: var(--color-info);">COMPLIANT</span>
+                      <span class="apbn-status-badge badge-blue">Sesuai Standar</span>
                     } @else {
-                      <span class="badge overdue" style="background-color: var(--color-danger-bg); color: var(--color-danger);">WARNING</span>
+                      <span class="apbn-status-badge badge-red">Perlu Audit</span>
                     }
                   </td>
                 </tr>
@@ -200,35 +378,55 @@
         </div>
       </div>
 
-      <!-- Recent CAPAs Table -->
-      <div class="section-card">
-        <div class="section-title">
-          <span>Recent Corrective Actions (CAPA)</span>
+      <!-- Table 2: Recent CAPA Actions -->
+      <div class="content-panel-card">
+        <div class="panel-header-row">
+          <div class="panel-title-group">
+            <span class="panel-badge-icon">🛠️</span>
+            <div>
+              <h3 class="panel-title">Tindakan CAPA Terbaru</h3>
+              <span class="panel-subtitle">Tindakan pencegahan dan perbaikan keselamatan klinis</span>
+            </div>
+          </div>
+          <a class="view-all-link" routerLink="/capa">
+            <span>Buka Modul CAPA</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
         </div>
-        <div class="table-wrapper">
-          <table class="custom-table">
+
+        <div class="table-responsive-wrapper">
+          <table class="apbn-styled-table">
             <thead>
               <tr>
-                <th>Action Title</th>
-                <th>Site</th>
-                <th>Due Date</th>
-                <th>Severity</th>
-                <th>Status</th>
+                <th>TINDAKAN PERBAIKAN</th>
+                <th>UNIT RS</th>
+                <th>TENGGAT</th>
+                <th>URGENSI</th>
+                <th>STATUS</th>
               </tr>
             </thead>
             <tbody>
+              @if (!data.recentCapas || data.recentCapas.length === 0) {
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 32px 0;">
+                    Belum ada tindakan CAPA yang diterbitkan untuk periode ini.
+                  </td>
+                </tr>
+              }
               @for (capa of data.recentCapas; track capa.id) {
                 <tr>
-                  <td class="highlight">{{ capa.title }}</td>
+                  <td class="font-semibold text-primary max-w-td">
+                    <a routerLink="/capa" class="capa-row-title-link">{{ capa.title }}</a>
+                  </td>
                   <td>{{ capa.siteName }}</td>
-                  <td>{{ capa.dueDate | date:'mediumDate' }}</td>
+                  <td>{{ capa.dueDate | date:'dd/MM/yyyy' }}</td>
                   <td>
-                    <span class="badge" [ngClass]="capa.severity.toLowerCase()">
+                    <span class="severity-pill" [ngClass]="capa.severity.toLowerCase()">
                       {{ capa.severity }}
                     </span>
                   </td>
                   <td>
-                    <span class="badge" [ngClass]="capa.status.toLowerCase()">
+                    <span class="apbn-status-badge" [ngClass]="'status-' + capa.status.toLowerCase()">
                       {{ capa.status }}
                     </span>
                   </td>
@@ -238,6 +436,8 @@
           </table>
         </div>
       </div>
+
     </div>
+
   </div>
 }

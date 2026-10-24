@@ -15,9 +15,15 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetDashboardData([FromQuery] Guid? siteId, [FromQuery] System.DateTime? startDate, [FromQuery] System.DateTime? endDate)
+    public async Task<IActionResult> GetDashboardData([FromQuery] string? siteId, [FromQuery] System.DateTime? startDate, [FromQuery] System.DateTime? endDate)
     {
-        var data = await _dashboardService.GetDashboardDataAsync(siteId, startDate, endDate);
+        Guid? parsedSiteId = null;
+        if (!string.IsNullOrWhiteSpace(siteId) && Guid.TryParse(siteId, out var g))
+        {
+            parsedSiteId = g;
+        }
+
+        var data = await _dashboardService.GetDashboardDataAsync(parsedSiteId, startDate, endDate);
         return Ok(data);
     }
 }

@@ -1,0 +1,1405 @@
+<div class="dashboard-container">
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Memuat konfigurasi indikator mutu NSI...</p>
+    </div>
+  }
+
+  @if (!loading && indicator) {
+    <div class="unified-clinical-card">
+
+      <!-- 1. CLINICAL HERO BANNER -->
+      <div class="indicator-hero-banner">
+        <div class="ind-header-top-row">
+          <div class="ind-header-left">
+            <div class="ind-breadcrumb">
+              <a routerLink="/nsi-audit" class="bread-link">Nursing Quality (NSI)</a>
+              <span class="sep">/</span>
+              <span class="cat-chip">{{ indicator.categoryName || 'Kategori Mutu' }}</span>
+              <span class="sep">/</span>
+              <span class="active">{{ indicator.name }}</span>
+            </div>
+            <div class="ind-title-row">
+              <h1 class="ind-main-title">
+                <span class="ind-title-icon">📋</span>
+                {{ indicator.name }}
+              </h1>
+              <div class="ind-meta-badges">
+                <span class="ind-target-chip">
+                  <span class="chip-pulse-dot"></span>
+                  Target Standar: {{ indicator.targetPercentage }}% Kepatuhan SPO
+                </span>
+                <span class="ind-code-chip">
+                  Kode: {{ indicator.code }}
+                </span>
+                <span class="ind-type-chip">
+                  Checklist Observasi NSI
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ind-header-actions">
+            <a routerLink="/nsi-audit" class="btn-back-overview">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Rekapitulasi Semua NSI</span>
+            </a>
+
+            <a class="btn-add-case" [routerLink]="['/nsi-indicators', indicator.id, 'input']">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ Input Audit Baru</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. CLINICAL KPI ROW (4 Cards Nested Inside Header) -->
+        <div class="ind-kpi-grid">
+          <!-- Card 1: Tingkat Kepatuhan -->
+          <div class="ind-kpi-card">
+            <div class="kpi-icon-box teal">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">RATA-RATA KEPATUHAN</span>
+              <div class="kpi-value-row">
+                <span class="kpi-num">{{ overallComplianceRate }}%</span>
+                <span class="kpi-sub-badge" [class.success]="isTargetMet" [class.warning]="!isTargetMet">
+                  {{ isTargetMet ? 'Target Terpenuhi' : 'Di Bawah Target' }}
+                </span>
+              </div>
+              <div class="kpi-mini-bar">
+                <div class="kpi-mini-fill" [style.width.%]="overallComplianceRate" [class.success]="isTargetMet" [class.warning]="!isTargetMet"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Sampel Pasien -->
+          <div class="ind-kpi-card">
+            <div class="kpi-icon-box blue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">TOTAL SAMPEL PASIEN</span>
+              <div class="kpi-value-row">
+                <span class="kpi-num">{{ totalNumerator }} / {{ totalDenominator }}</span>
+              </div>
+              <span class="kpi-sub-text">Observasi dari {{ submissions.length }} periode audit</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Menunggu Approval -->
+          <div class="ind-kpi-card">
+            <div class="kpi-icon-box amber">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">MENUNGGU APPROVAL</span>
+              <div class="kpi-value-row">
+                <span class="kpi-num">{{ pendingApprovalCount }}</span>
+                <small class="kpi-unit">berkas</small>
+              </div>
+              <span class="kpi-sub-text text-amber">Antrian review PSQO, Kanit & Kadept</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Status PDSA / Tindak Lanjut -->
+          <div class="ind-kpi-card">
+            <div class="kpi-icon-box" [class.red]="!isTargetMet && totalDenominator > 0" [class.green]="isTargetMet || totalDenominator === 0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">STATUS SIKLUS PDSA</span>
+              <div class="kpi-value-row">
+                <span class="kpi-num" [class.text-red]="!isTargetMet && totalDenominator > 0" [class.text-green]="isTargetMet || totalDenominator === 0">
+                  {{ !isTargetMet && totalDenominator > 0 ? 'Perlu PDSA' : 'Optimal' }}
+                </span>
+              </div>
+              <span class="kpi-sub-text">
+                {{ !isTargetMet && totalDenominator > 0 ? 'Capaian < 100%, wajib buat Plan of Action' : 'Kepatuhan memenuhi standar SPO' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CONNECTED TOOLBAR & DATA TABLE -->
+      <div class="panel-body-connected">
+        <div class="ind-toolbar-connected">
+          <div class="toolbar-left">
+            <!-- Search Input -->
+            <div class="toolbar-search-box">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Cari Rumah Sakit, Unit, atau Penginput..." class="toolbar-search-input">
+            </div>
+
+            <!-- Segmented Status Tabs -->
+            <div class="toolbar-status-tabs">
+              <button class="status-tab-btn" [class.active]="filterStatus === 'ALL'" (click)="filterStatus = 'ALL'; onFilterChange()">
+                Semua ({{ submissions.length }})
+              </button>
+              <button class="status-tab-btn warning" [class.active]="filterStatus === '1'" (click)="filterStatus = '1'; onFilterChange()">
+                Menunggu L1
+              </button>
+              <button class="status-tab-btn info" [class.active]="filterStatus === '2'" (click)="filterStatus = '2'; onFilterChange()">
+                Menunggu L2
+              </button>
+              <button class="status-tab-btn purple" [class.active]="filterStatus === '3'" (click)="filterStatus = '3'; onFilterChange()">
+                Menunggu L3
+              </button>
+              <button class="status-tab-btn success" [class.active]="filterStatus === '4'" (click)="filterStatus = '4'; onFilterChange()">
+                ✓ Terverifikasi
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <!-- Month Picker -->
+            <div class="compact-date-pill">
+              <span class="date-icon">📅</span>
+              <span class="date-label">Periode:</span>
+              <input type="month" [(ngModel)]="filterMonth" (ngModelChange)="onFilterChange()" class="compact-date-input">
+            </div>
+
+            <!-- Site Filter -->
+            <div class="compact-site-pill" *ngIf="sites.length > 0">
+              <span class="site-icon">🏥</span>
+              <select [(ngModel)]="filterSiteId" (ngModelChange)="onFilterChange()" class="compact-site-select">
+                <option value="">Semua RS</option>
+                <option *ngFor="let s of sites" [value]="s.id">{{ s.name }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- REUSABLE ROW-LEVEL PATIENT STEPPER TEMPLATE -->
+        <ng-template #patientStepperTemplate let-obs="obs">
+          <div class="patient-row-stepper-panel animate-fade-in">
+            <!-- Header banner of the patient row stepper -->
+            <div class="prs-header">
+              <div class="prs-header-left">
+                <div class="prs-icon-circle">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="prs-header-meta">
+                  <div class="prs-title-row">
+                    <h4 class="prs-patient-title">Linimasa Persetujuan Raw Data: <strong>{{ obs.patientName }}</strong></h4>
+                    <span class="prs-rm-tag">No RM: {{ obs.patientIdentifier }}</span>
+                    <span class="prs-unit-tag">{{ obs.hospitalUnitName }}</span>
+                  </div>
+                  <div class="prs-subtitle">
+                    <span>Penginput / Auditor: <strong>{{ obs.auditorName }}</strong></span>
+                    <span class="sep">&bull;</span>
+                    <span>Tanggal Pengamatan: <strong>{{ obs.auditDate | date:'dd/MM/yyyy' }}</strong></span>
+                    <span class="sep">&bull;</span>
+                    <span>Tahap Saat Ini: <strong class="prs-status-text" [ngClass]="getStatusBadgeClass(obs.status)">{{ getStatusLabel(obs.status) }}</strong></span>
+                  </div>
+                </div>
+              </div>
+              <div class="prs-header-right">
+                <button type="button" class="btn-prs-close" (click)="toggleRowExpand(obs.id, $event)">
+                  ✕ Tutup
+                </button>
+              </div>
+            </div>
+
+            <!-- 4-Node Patient Stepper Track (Berakhir di Level Kadept NQ) -->
+            <div class="prs-stepper-track">
+              <!-- 1. Diinput & Diajukan -->
+              <div class="prs-node done">
+                <div class="prs-circle">✓</div>
+                <div class="prs-node-body">
+                  <div class="prs-node-step">Tahap 1</div>
+                  <div class="prs-node-title">Diinput &amp; Diajukan</div>
+                  <div class="prs-node-actor">{{ getStepActor(obs, 1) }}</div>
+                  <div class="prs-node-date">{{ getStepDate(obs, 1) | date:'dd/MM/yyyy HH:mm' }}</div>
+                  <span class="prs-pill done">Diajukan</span>
+                </div>
+              </div>
+
+              <div class="prs-line" [class.done]="obs.status >= 2"></div>
+
+              <!-- 2. Validasi PSQO (L1) -->
+              <div class="prs-node" [ngClass]="getStepStatus(obs, 2)">
+                <div class="prs-circle">{{ obs.status >= 2 ? '✓' : '2' }}</div>
+                <div class="prs-node-body">
+                  <div class="prs-node-step">Tahap 2</div>
+                  <div class="prs-node-title">Validasi PSQO (L1)</div>
+                  <div class="prs-node-actor">{{ getStepActor(obs, 2) }}</div>
+                  <div class="prs-node-date" *ngIf="getStepDate(obs, 2)">{{ getStepDate(obs, 2) | date:'dd/MM/yyyy HH:mm' }}</div>
+                  <span class="prs-pill" [ngClass]="getStepStatus(obs, 2)">
+                    {{ obs.status >= 2 ? 'Tervalidasi' : (obs.status === 1 ? 'Sedang Direview' : 'Antrean') }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="prs-line" [class.done]="obs.status >= 3"></div>
+
+              <!-- 3. Approve Kanit (L2) -->
+              <div class="prs-node" [ngClass]="getStepStatus(obs, 3)">
+                <div class="prs-circle">{{ obs.status >= 3 ? '✓' : '3' }}</div>
+                <div class="prs-node-body">
+                  <div class="prs-node-step">Tahap 3</div>
+                  <div class="prs-node-title">Approve Kanit (L2)</div>
+                  <div class="prs-node-actor">{{ getStepActor(obs, 3) }}</div>
+                  <div class="prs-node-date" *ngIf="getStepDate(obs, 3)">{{ getStepDate(obs, 3) | date:'dd/MM/yyyy HH:mm' }}</div>
+                  <span class="prs-pill" [ngClass]="getStepStatus(obs, 3)">
+                    {{ obs.status >= 3 ? 'Disetujui' : (obs.status === 2 ? 'Menunggu Approval' : 'Antrean') }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="prs-line" [class.done]="obs.status >= 4"></div>
+
+              <!-- 4. Verifikasi & Approval Kadept NQ (L3 - Final) -->
+              <div class="prs-node" [ngClass]="getStepStatus(obs, 4)">
+                <div class="prs-circle">{{ obs.status >= 4 ? '★' : '4' }}</div>
+                <div class="prs-node-body">
+                  <div class="prs-node-step">Tahap 4 (Final)</div>
+                  <div class="prs-node-title">Verifikasi Kadept NQ</div>
+                  <div class="prs-node-actor">{{ getStepActor(obs, 4) }}</div>
+                  <div class="prs-node-date" *ngIf="getStepDate(obs, 4)">{{ getStepDate(obs, 4) | date:'dd/MM/yyyy HH:mm' }}</div>
+                  <span class="prs-pill" [ngClass]="getStepStatus(obs, 4)">
+                    {{ obs.status >= 4 ? 'Terverifikasi (Final)' : (obs.status === 3 ? 'Menunggu Verifikasi' : 'Antrean') }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Controls & Clinical Notes -->
+            <div class="prs-footer">
+              <div class="prs-footer-note">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span><strong>Catatan Observasi:</strong> {{ obs.notes || 'Asuhan kepatuhan klinis terdokumentasi sesuai SPO.' }}</span>
+              </div>
+              <div class="prs-footer-actions">
+                @if (obs.status < 4 && canApproveStep(obs.status)) {
+                  <button type="button" class="btn-prs-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Setujui Tahap Ini ({{ getNextStepName(obs.status) }})</span>
+                  </button>
+                }
+                @if (obs.status < 4 && !canApproveStep(obs.status)) {
+                  <span class="prs-role-notice">🔒 Wewenang approval tahap ini: Role <strong>{{ getRequiredRoleName(obs.status) }}</strong> atau Admin</span>
+                }
+                @if (isAdmin && obs.status < 4) {
+                  <button type="button" class="btn-prs-action verify-corp" (click)="quickVerify(obs.submissionId, $event)">
+                    <span>★ Verifikasi Langsung (Kadept/Admin)</span>
+                  </button>
+                }
+                @if (obs.status >= 4 && isAdmin) {
+                  <button type="button" class="btn-prs-action reset" (click)="quickUnverify(obs.submissionId, $event)">
+                    <span>↺ Batalkan / Reset Verifikasi</span>
+                  </button>
+                }
+                <a class="btn-prs-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <span>Edit Raw Data Ini</span>
+                </a>
+                @if (canDelete(obs)) {
+                  <button type="button" class="btn-prs-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    <span>Hapus Raw Data</span>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </ng-template>
+
+        <!-- Data Table Card (Raw Data Klinis Langsung Sesuai Dokumen Permintaan) -->
+        <div class="table-container-card">
+          @if (loadingSubmissions) {
+            <div class="table-loading-state">
+              <div class="spinner-small"></div>
+              <span>Memuat data raw audit indikator...</span>
+            </div>
+          }
+
+          @if (!loadingSubmissions && filteredSubmissions.length === 0) {
+            <div class="table-empty-state">
+              <div class="empty-icon">📭</div>
+              <h3>Belum Ada Data Observasi Klinis</h3>
+              <p>Belum ada data audit raw data yang dicatat untuk indikator <strong>{{ indicator.name }}</strong> pada periode yang dipilih.</p>
+              <a class="btn-empty-action" [routerLink]="['/nsi-indicators', indicator.id, 'input']">
+                + Input Formulir Audit Raw Data Sekarang
+              </a>
+            </div>
+          }
+
+          <!-- TAMPILAN RAW DATA PASIEN SESUAI DOKUMEN PERMINTAAN -->
+          @if (!loadingSubmissions && filteredSubmissions.length > 0) {
+            <div class="table-scroll-area">
+              
+              <!-- 1.1 RAW DATA: NCP (Nursing Care Plan - 100% Sesuai Format CR Dokumen Image 1) -->
+              <table *ngIf="rawDataCategory === 'NCP'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-green">
+                    <th style="width: 38px;" class="text-center">NO</th>
+                    <th style="width: 105px;">Tanggal Jam</th>
+                    <th style="width: 120px;">Nama Pasien</th>
+                    <th style="width: 75px;">Unit</th>
+                    <th style="min-width: 170px;">Diagnosa Pasien</th>
+                    <th style="width: 130px;" class="text-center">Tanggal &amp; Jam Tiba di ruangan</th>
+                    <th style="width: 130px;" class="text-center">Tanggal &amp; Jam NCP dibuat</th>
+                    <th style="width: 65px;" class="text-center">Jumlah NCP Pasien</th>
+                    <th style="min-width: 160px;">Penetapan Diagnosa keperawatan</th>
+                    <th style="width: 85px;" class="text-center" title="NCP Sesuai=1, Tidak Sesuai=0">NCP (Sesuai=1, Tidak Sesuai=0)</th>
+                    <th style="width: 85px;" class="text-center" title="NCP dibuat <7jam">NCP dibuat &lt; 7jam</th>
+                    <th style="width: 50px;" class="text-center">Num</th>
+                    <th style="width: 50px;" class="text-center">Denum</th>
+                    <th style="width: 110px;">Nama Auditor (Penginput Data)</th>
+                    <th style="width: 110px;" class="text-center">Verifikasi (Kanit/ NQ)</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td class="font-semibold text-primary">{{ obs.patientName }}</td>
+                      <td><span class="unit-tag-badge">{{ obs.hospitalUnitName }}</span></td>
+                      <td><span class="text-xs">{{ obs.custom.diagnosis || '-' }}</span></td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.roomArrivalTime || '-' }}</td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.ncpCreatedTime || '-' }}</td>
+                      <td class="text-center font-bold">{{ obs.custom.ncpCount !== undefined ? obs.custom.ncpCount : 1 }}</td>
+                      <td><span class="text-xs whitespace-pre-line">{{ obs.custom.ncpDiagnosis || '-' }}</span></td>
+                      <td class="text-center font-bold">
+                        <span class="badge-dot" [class.on]="obs.custom.isNcpCompliant">{{ obs.custom.isNcpCompliant ? '1' : '0' }}</span>
+                      </td>
+                      <td class="text-center font-bold">
+                        <span class="badge-dot" [class.on]="obs.custom.isNcpUnder7h">{{ obs.custom.isNcpUnder7h ? '1' : '0' }}</span>
+                      </td>
+                      <td class="text-center font-bold" [class.text-success]="obs.isCompliant" [class.text-danger]="!obs.isCompliant">
+                        {{ obs.isCompliant ? 1 : 0 }}
+                      </td>
+                      <td class="text-center font-bold">1</td>
+                      <td><span class="text-xs font-semibold">{{ obs.auditorName }}</span></td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- 1.2 RAW DATA: RNC (Responsiveness Nursing of Call - 100% Sesuai Format CR Dokumen Image 2) -->
+              <table *ngIf="rawDataCategory === 'RNC'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-green">
+                    <th style="width: 38px;" class="text-center">No</th>
+                    <th style="width: 105px;">Tanggal</th>
+                    <th style="width: 85px;">No Kamar</th>
+                    <th style="width: 130px;">Nama Pasien</th>
+                    <th style="width: 150px;" class="text-center">Waktu Bell ditekan Pasien (dd/mm/yy hh.mm)</th>
+                    <th style="width: 150px;" class="text-center">Waktu Bell direspon Perawat (dd/mm/yy hh.mm)</th>
+                    <th style="width: 110px;" class="text-center">Duration (hh.mm)</th>
+                    <th style="width: 65px;" class="text-center">Numerator</th>
+                    <th style="width: 70px;" class="text-center">Denominator</th>
+                    <th style="width: 110px;">Observer</th>
+                    <th style="width: 110px;" class="text-center">Validator (PSQO/Kanit)</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td class="font-mono font-bold text-primary">{{ obs.custom.roomNumber || obs.patientIdentifier }}</td>
+                      <td>{{ obs.patientName }}</td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.callTime || '-' }}</td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.responseTime || '-' }}</td>
+                      <td class="text-center font-bold">
+                        <span class="duration-badge" [class.duration-good]="obs.isCompliant" [class.duration-bad]="!obs.isCompliant">
+                          {{ obs.custom.durationText || (obs.custom.durationMinutes + ' mnt') }}
+                        </span>
+                      </td>
+                      <td class="text-center font-bold" [class.text-success]="obs.isCompliant" [class.text-danger]="!obs.isCompliant">
+                        {{ obs.isCompliant ? 1 : 0 }}
+                      </td>
+                      <td class="text-center font-bold">1</td>
+                      <td><span class="text-xs font-semibold">{{ obs.auditorName }}</span></td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- 1.3 RAW DATA: REKAM MEDIS (8 Indikator - 100% Sesuai Format CR Dokumen Image 3-10) -->
+              <table *ngIf="rawDataCategory === 'REK_MED'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-green">
+                    <th style="width: 38px;" class="text-center">No</th>
+                    <th style="width: 105px;">Tanggal (dd/mm/yy)</th>
+                    <th style="width: 130px;">Nama Pasien</th>
+                    <th style="width: 110px;">No Rekam Medis</th>
+                    <th style="width: 85px;">Unit</th>
+                    <th style="width: 75px;" class="text-center" title="Ada / Tersedia">ADA/ TERSEDIA</th>
+                    <th style="width: 75px;" class="text-center" title="Tepat Waktu">TEPAT WAKTU</th>
+                    <th style="width: 75px;" class="text-center" title="Dapat Dibaca">DAPAT DIBACA</th>
+                    <th style="width: 85px;" class="text-center" title="Diautentifikasi">DI AUTENTIFIKASI</th>
+                    <th style="width: 75px;" class="text-center" title="Lengkap">LENGKAP</th>
+                    <th style="width: 50px;" class="text-center" title="Not Applicable">NA</th>
+                    <th style="width: 95px;" class="text-center">RERATA CAPAIAN</th>
+                    <th style="width: 55px;" class="text-center">Num</th>
+                    <th style="width: 55px;" class="text-center">Denum</th>
+                    <th style="width: 110px;">Auditor</th>
+                    <th style="width: 110px;" class="text-center">Verifikasi</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td class="font-semibold text-primary">{{ obs.patientName }}</td>
+                      <td class="font-mono font-bold">{{ obs.patientIdentifier }}</td>
+                      <td><span class="unit-tag-badge">{{ obs.hospitalUnitName }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.criteriaAda">{{ obs.custom.criteriaAda ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.criteriaTepatWaktu">{{ obs.custom.criteriaTepatWaktu ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.criteriaDapatDibaca">{{ obs.custom.criteriaDapatDibaca ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.criteriaAutentikasi">{{ obs.custom.criteriaAutentikasi ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.criteriaLengkap">{{ obs.custom.criteriaLengkap ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold">{{ obs.custom.isNa ? '1' : '-' }}</td>
+                      <td class="text-center">
+                        <span class="score-pill" [class.score-100]="obs.scorePercentage === 100" [class.score-sub]="obs.scorePercentage < 100">
+                          {{ obs.scorePercentage }}%
+                        </span>
+                      </td>
+                      <td class="text-center font-bold" [class.text-success]="obs.isCompliant" [class.text-danger]="!obs.isCompliant">
+                        {{ obs.isCompliant ? 1 : 0 }}
+                      </td>
+                      <td class="text-center font-bold">1</td>
+                      <td><span class="text-xs font-semibold">{{ obs.auditorName }}</span></td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- 1.4 RAW DATA: EDUKASI (100% Sesuai Format CR Dokumen Image 11) -->
+              <table *ngIf="rawDataCategory === 'EDUKASI'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-blue">
+                    <th style="width: 38px;" class="text-center">No</th>
+                    <th style="width: 105px;">Tanggal</th>
+                    <th style="width: 85px;">Unit</th>
+                    <th style="width: 120px;">Nama Pasien</th>
+                    <th style="width: 95px;">No RM</th>
+                    <th style="width: 85px;" class="text-center">Orientasi Ruangan</th>
+                    <th style="width: 85px;" class="text-center">Resiko Jatuh</th>
+                    <th style="width: 85px;" class="text-center">Plebitis</th>
+                    <th style="width: 85px;" class="text-center">Cuci Tangan</th>
+                    <th style="width: 85px;" class="text-center">Perawatan Luka</th>
+                    <th style="width: 85px;" class="text-center">Discharge Education</th>
+                    <th style="width: 65px;" class="text-center">Numerator</th>
+                    <th style="width: 70px;" class="text-center">Denumerator</th>
+                    <th style="width: 110px;">Observer</th>
+                    <th style="width: 110px;" class="text-center">Verifikasi</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td><span class="unit-tag-badge">{{ obs.hospitalUnitName }}</span></td>
+                      <td class="font-semibold text-primary">{{ obs.patientName }}</td>
+                      <td class="font-mono font-bold">{{ obs.patientIdentifier }}</td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.eduOrientasi">{{ obs.custom.eduOrientasi ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.eduJatuh">{{ obs.custom.eduJatuh ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.eduPlebitis">{{ obs.custom.eduPlebitis ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.eduCuciTangan">{{ obs.custom.eduCuciTangan ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold">{{ obs.custom.eduLuka === 'NA' ? 'NA' : (obs.custom.eduLuka ? '1' : '0') }}</td>
+                      <td class="text-center font-bold">{{ obs.custom.eduDischarge === 'NA' ? 'NA' : (obs.custom.eduDischarge ? '1' : '0') }}</td>
+                      <td class="text-center font-bold" [class.text-success]="obs.isCompliant" [class.text-danger]="!obs.isCompliant">
+                        {{ obs.isCompliant ? 1 : 0 }}
+                      </td>
+                      <td class="text-center font-bold">1</td>
+                      <td><span class="text-xs font-semibold">{{ obs.auditorName }}</span></td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- 1.5 RAW DATA: VITAL / MONITORING TTV (100% Sesuai Format CR Dokumen Image 12) -->
+              <table *ngIf="rawDataCategory === 'VITAL'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-green">
+                    <th style="width: 38px;" class="text-center">No</th>
+                    <th style="width: 105px;">Tanggal (dd/mm/yy)</th>
+                    <th style="width: 120px;">Nama Pasien</th>
+                    <th style="width: 110px;">No Rekam Medis</th>
+                    <th style="width: 85px;">Unit</th>
+                    <th style="width: 125px;">Kriteria Pasien</th>
+                    <th style="width: 100px;" class="text-center">Waktu tiba di unit</th>
+                    <th style="width: 140px;" class="text-center">Ketepatan waktu monitoring ulang TTV</th>
+                    <th style="width: 130px;" class="text-center">Kesimpulan : Sesuai (1) / Tidak Sesuai (0)</th>
+                    <th style="width: 55px;" class="text-center">Num</th>
+                    <th style="width: 55px;" class="text-center">Denum</th>
+                    <th style="width: 110px;">Nama Auditor</th>
+                    <th style="width: 110px;" class="text-center">Verifikasi</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td class="font-semibold text-primary">{{ obs.patientName }}</td>
+                      <td class="font-mono font-bold">{{ obs.patientIdentifier }}</td>
+                      <td><span class="unit-tag-badge">{{ obs.hospitalUnitName }}</span></td>
+                      <td><span class="text-xs font-semibold">{{ obs.custom.patientCriteria || '-' }}</span></td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.arrivalTime || '-' }}</td>
+                      <td class="text-center font-bold">
+                        <span class="badge-dot" [class.on]="obs.custom.isTtvOnTime">{{ obs.custom.isTtvOnTime ? '1' : '0' }}</span>
+                      </td>
+                      <td class="text-center font-bold">
+                        <span class="badge-dot" [class.on]="obs.isCompliant">{{ obs.isCompliant ? '1' : '0' }}</span>
+                      </td>
+                      <td class="text-center font-bold" [class.text-success]="obs.isCompliant" [class.text-danger]="!obs.isCompliant">
+                        {{ obs.isCompliant ? 1 : 0 }}
+                      </td>
+                      <td class="text-center font-bold">1</td>
+                      <td><span class="text-xs font-semibold">{{ obs.auditorName }}</span></td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- 1.6 RAW DATA: PAIN / TATA LAKSANA NYERI (100% Sesuai Format CR Dokumen Image 13) -->
+              <table *ngIf="rawDataCategory === 'PAIN'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-green">
+                    <th style="width: 38px;" class="text-center">No</th>
+                    <th style="width: 105px;">Tanggal (dd/mm/yy)</th>
+                    <th style="width: 120px;">Nama Pasien</th>
+                    <th style="width: 110px;">No Rekam Medis</th>
+                    <th style="width: 85px;">Unit</th>
+                    <th style="width: 110px;" class="text-center">Pasien mendapatkan analgetik IV Rutin? (Ya/Tidak)</th>
+                    <th style="width: 100px;">Kategori Nyeri</th>
+                    <th style="min-width: 140px;">Nama Obat</th>
+                    <th style="width: 125px;" class="text-center">Evaluasi ulang post pemberian analgetik (sesuai (1)/Tidak sesuai (0))</th>
+                    <th style="width: 110px;" class="text-center">Asesmen Ulang nyeri (sesuai (1)/Tidak sesuai (0))</th>
+                    <th style="width: 110px;" class="text-center">Kesimpulan : Sesuai (1) / Tidak Sesuai (0)</th>
+                    <th style="width: 55px;" class="text-center">Num</th>
+                    <th style="width: 55px;" class="text-center">Denum</th>
+                    <th style="width: 110px;">Nama Auditor</th>
+                    <th style="width: 110px;" class="text-center">Verifikasi</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td class="font-semibold text-primary">{{ obs.patientName }}</td>
+                      <td class="font-mono font-bold">{{ obs.patientIdentifier }}</td>
+                      <td><span class="unit-tag-badge">{{ obs.hospitalUnitName }}</span></td>
+                      <td class="text-center font-bold">{{ obs.custom.hasRoutineIvAnalgesic || 'Ya' }}</td>
+                      <td><span class="text-xs font-semibold">{{ obs.custom.painCategory || 'Sedang' }}</span></td>
+                      <td><span class="text-xs">{{ obs.custom.medicationName || '-' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.isPostEvaluationCompliant">{{ obs.custom.isPostEvaluationCompliant ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.isReassessmentCompliant">{{ obs.custom.isReassessmentCompliant ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.isCompliant">{{ obs.isCompliant ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold" [class.text-success]="obs.isCompliant" [class.text-danger]="!obs.isCompliant">
+                        {{ obs.isCompliant ? 1 : 0 }}
+                      </td>
+                      <td class="text-center font-bold">1</td>
+                      <td><span class="text-xs font-semibold">{{ obs.auditorName }}</span></td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- 1.7 RAW DATA: EWS (100% Sesuai Format CR Dokumen Image 14) -->
+              <table *ngIf="rawDataCategory === 'EWS'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-green">
+                    <th style="width: 38px;" class="text-center">No</th>
+                    <th style="width: 105px;">Tanggal</th>
+                    <th style="width: 120px;">Nama Pasien</th>
+                    <th style="width: 100px;">No Rekam Medis</th>
+                    <th style="width: 85px;">Unit/Asal Ruangan</th>
+                    <th style="width: 90px;" class="text-center">Jam monitoring EWS</th>
+                    <th style="width: 65px;" class="text-center">Skor EWS</th>
+                    <th style="width: 90px;" class="text-center">Jam Lapor DPJP/GP</th>
+                    <th style="width: 110px;" class="text-center">Peningkatan Frekuensi Monitoring (Sesuai=1, Tidak Sesuai=0)</th>
+                    <th style="width: 120px;" class="text-center">Ketepatan tindak lanjut skor EWS dengan kondisi pasien (Sesuai=1, Tidak Sesuai=0)</th>
+                    <th style="min-width: 130px;" class="text-center">Dokumentasi (Bukti Pelaporan Kepada GP atau DPJP) tertulis di CPPT (Sesuai=1, Tidak Sesuai=0)</th>
+                    <th style="width: 110px;">Nama Petugas</th>
+                    <th style="width: 65px;" class="text-center">Numerator</th>
+                    <th style="width: 70px;" class="text-center">Denominator</th>
+                    <th style="width: 110px;" class="text-center">Verifikasi</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td class="font-semibold text-primary">{{ obs.patientName }}</td>
+                      <td class="font-mono font-bold">{{ obs.patientIdentifier }}</td>
+                      <td><span class="unit-tag-badge">{{ obs.hospitalUnitName }}</span></td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.ewsMonitorTime || '-' }}</td>
+                      <td class="text-center font-bold">
+                        <span class="ews-score-badge" [class.ews-alert]="obs.custom.ewsScore >= 4">{{ obs.custom.ewsScore || 0 }}</span>
+                      </td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.ewsReportTime || '-' }}</td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.isFreqEscalated">{{ obs.custom.isFreqEscalated ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.isActionAppropriate">{{ obs.custom.isActionAppropriate ? '1' : '0' }}</span></td>
+                      <td class="text-center font-bold"><span class="badge-dot" [class.on]="obs.custom.isCpptDocumented">{{ obs.custom.isCpptDocumented ? '1' : '0' }}</span></td>
+                      <td><span class="text-xs font-semibold">{{ obs.auditorName }}</span></td>
+                      <td class="text-center font-bold" [class.text-success]="obs.isCompliant" [class.text-danger]="!obs.isCompliant">
+                        {{ obs.isCompliant ? 1 : 0 }}
+                      </td>
+                      <td class="text-center font-bold">1</td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- 1.8 RAW DATA: PROJECT IMPROVEMENT IGD TIME-BASED (100% Sesuai Format CR Dokumen Image 15-20) -->
+              <table *ngIf="rawDataCategory === 'TIME_BASED' || rawDataCategory === 'GENERIC'" class="custom-table raw-data-grid">
+                <thead>
+                  <tr class="header-cr-green">
+                    <th style="width: 38px;" class="text-center">No</th>
+                    <th style="width: 120px;">No Rekam Medis</th>
+                    <th style="width: 105px;">Tanggal (dd/mm/yy)</th>
+                    <th style="width: 120px;" class="text-center">Waktu tiba di IGD (hh:mm)</th>
+                    <th style="width: 120px;" class="text-center">Waktu Selesai (hh:mm)</th>
+                    <th style="width: 110px;" class="text-center">Selisih waktu (hh:mm)</th>
+                    <th style="width: 130px;" class="text-center">Target (&le; {{ indicator.targetMinutes || 10 }} menit)</th>
+                    <th style="min-width: 150px;">Keterangan (Jika Tidak tercapai)</th>
+                    <th style="width: 110px;" class="text-center">Verifikasi</th>
+                    <th style="width: 165px;" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (obs of pagedRawObservations; track obs.id) {
+                    <tr class="table-row-hover clickable-row" [class.row-noncompliant]="!obs.isCompliant" (click)="toggleRowExpand(obs.id)" title="Klik baris pasien ini untuk melihat alur linimasa persetujuan">
+                      <td class="text-center font-mono font-bold">{{ obs.rowNumber }}</td>
+                      <td class="font-mono font-bold text-primary">{{ obs.patientIdentifier }}</td>
+                      <td><span class="font-semibold">{{ obs.auditDate | date:'dd/MM/yyyy' }}</span></td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.doorTime || (obs.auditDate | date:'HH:mm:ss') }}</td>
+                      <td class="text-center font-mono text-xs">{{ obs.custom.eventTime || '-' }}</td>
+                      <td class="text-center font-bold">
+                        <span class="duration-badge" [class.duration-good]="obs.isCompliant" [class.duration-bad]="!obs.isCompliant">
+                          {{ obs.custom.elapsedTimeText || (obs.custom.minutesElapsed + ' mnt') }}
+                        </span>
+                      </td>
+                      <td class="text-center">
+                        <span class="badge-mini-status" [class.success]="obs.isCompliant" [class.danger]="!obs.isCompliant">
+                          {{ obs.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+                        </span>
+                      </td>
+                      <td><span class="text-xs">{{ obs.notes || obs.custom.notes || '-' }}</span></td>
+                                                                  <td class="text-center">
+                        <button type="button" class="btn-verify-status" (click)="toggleRowExpand(obs.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                          <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(obs.status)">
+                            <span class="status-pulse-dot" *ngIf="obs.status < 4"></span>
+                            {{ getStatusLabel(obs.status) }}
+                          </span>
+                        </button>
+                      </td>
+                      <td class="text-center">
+                        <div class="table-actions-cell">
+                          <a class="btn-table-action edit" [routerLink]="['/nsi-indicators', indicator.id, 'edit', obs.submissionId]" title="Edit Raw Data Pasien">
+                            Edit
+                          </a>
+                          @if (obs.status < 4) {
+                            @if (canApproveStep(obs.status)) {
+                              <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(obs.submissionId, obs.status, $event)" [title]="'Setujui ' + getNextStepName(obs.status) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                                ✓ {{ getNextStepShort(obs.status) }}
+                              </button>
+                            } @else {
+                              <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(obs.status) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                                🔒 {{ getRequiredRoleName(obs.status) }}
+                              </button>
+                            }
+                          }
+                          @if (obs.status >= 4) {
+                            <span class="badge-verified-done" title="Data ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                            @if (isAdmin) {
+                              <button type="button" class="btn-table-action reset" (click)="quickUnverify(obs.submissionId, $event)" title="Batalkan status verifikasi (Reset)">
+                                ↺
+                              </button>
+                            }
+                          }
+                          @if (canDelete(obs)) {
+                            <button type="button" class="btn-table-action delete" (click)="deleteObservation(obs, $event)" title="Hapus Raw Data Pasien (Khusus Kanit / Kadept NQ / Admin)">
+                              🗑️
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="expandedRowId === obs.id" class="row-expansion-stepper-tr">
+                      <td [attr.colspan]="getColspanForCategory(rawDataCategory)">
+                        <ng-container *ngTemplateOutlet="patientStepperTemplate; context: { obs: obs }"></ng-container>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+            </div>
+
+            <!-- MODERN PAGINATION BAR -->
+            <div class="table-pagination-bar" *ngIf="totalObservationsCount > 0">
+              <div class="pagination-info">
+                <span class="pagination-count-text">
+                  Menampilkan <strong>{{ paginationStartIndex }}</strong> - <strong>{{ paginationEndIndex }}</strong> dari <strong>{{ totalObservationsCount }}</strong> data pasien
+                </span>
+              </div>
+              <div class="pagination-actions">
+                <div class="page-size-selector">
+                  <label for="pageSizeSelect" class="page-size-label">Baris per halaman:</label>
+                  <select id="pageSizeSelect" [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="page-size-select">
+                    <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
+                  </select>
+                </div>
+                <div class="pagination-nav-group">
+                  <button type="button" class="btn-pagination-nav" [disabled]="currentPage === 1" (click)="setPage(1)" title="Halaman Pertama">
+                    &laquo;
+                  </button>
+                  <button type="button" class="btn-pagination-nav" [disabled]="currentPage === 1" (click)="setPage(currentPage - 1)" title="Halaman Sebelumnya">
+                    &lsaquo;
+                  </button>
+                  <div class="pagination-pages">
+                    <button *ngFor="let p of visiblePages" type="button" class="btn-pagination-page" [class.active]="p === currentPage" (click)="setPage(p)">
+                      {{ p }}
+                    </button>
+                  </div>
+                  <button type="button" class="btn-pagination-nav" [disabled]="currentPage === totalPages" (click)="setPage(currentPage + 1)" title="Halaman Selanjutnya">
+                    &rsaquo;
+                  </button>
+                  <button type="button" class="btn-pagination-nav" [disabled]="currentPage === totalPages" (click)="setPage(totalPages)" title="Halaman Terakhir">
+                    &raquo;
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- DETAIL & APPROVAL STEPPER MODAL -->
+  @if (detailModalOpen && selectedSubmission) {
+    <div class="modal-backdrop" (click)="closeDetailModal()">
+      <div class="modal-container-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <span class="status-pill" [ngClass]="getStatusClass(selectedSubmission.status)">
+              {{ selectedSubmission.statusText }}
+            </span>
+            <h2 class="modal-title">{{ selectedSubmission.indicatorName }}</h2>
+            <p class="modal-sub">
+              {{ selectedSubmission.hospitalUnitName }} • {{ selectedSubmission.hospitalSiteName }} • Tanggal {{ selectedSubmission.auditDate | date:'yyyy-MM-dd' }}
+            </p>
+          </div>
+          <button class="btn-close-modal" (click)="closeDetailModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- VISUAL APPROVAL STEPPER -->
+          <div class="stepper-card">
+            <h3 class="stepper-title">ALUR PERSETUJUAN & VERIFIKASI BERJENJANG</h3>
+            <div class="stepper-track">
+              <!-- Step 1: Pengajuan PIC -->
+              <div class="step-node" [class.completed]="selectedSubmission.status >= 1">
+                <div class="step-circle">1</div>
+                <div class="step-label">Pengajuan PIC</div>
+                <div class="step-actor">{{ selectedSubmission.submittedByName || 'PIC Unit' }}</div>
+              </div>
+              <div class="step-connector" [class.active]="selectedSubmission.status >= 2"></div>
+
+              <!-- Step 2: Approval L1 (PSQO) -->
+              <div class="step-node" [class.completed]="selectedSubmission.status >= 2">
+                <div class="step-circle">2</div>
+                <div class="step-label">Approval L1 (PSQO)</div>
+                <div class="step-actor">PSQO / PJ Shift Unit</div>
+              </div>
+              <div class="step-connector" [class.active]="selectedSubmission.status >= 3"></div>
+
+              <!-- Step 3: Approval L2 (Kanit) -->
+              <div class="step-node" [class.completed]="selectedSubmission.status >= 3">
+                <div class="step-circle">3</div>
+                <div class="step-label">Approval L2 (Kanit)</div>
+                <div class="step-actor">Kepala Unit</div>
+              </div>
+              <div class="step-connector" [class.active]="selectedSubmission.status >= 4"></div>
+
+              <!-- Step 4: Approval L3 (Kadept NQ) -->
+              <div class="step-node" [class.completed]="selectedSubmission.status >= 4">
+                <div class="step-circle">4</div>
+                <div class="step-label">Approval L3 (Kadept NQ)</div>
+                <div class="step-actor">Kadept Nursing Quality</div>
+              </div>
+              <div class="step-connector" [class.active]="selectedSubmission.status === 5"></div>
+
+              <!-- Step 5: Verifikasi Corporate -->
+              <div class="step-node" [class.completed]="selectedSubmission.status === 5">
+                <div class="step-circle">5</div>
+                <div class="step-label">Verifikasi Corporate</div>
+                <div class="step-actor">NQ Corporate (Head Group)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- OBSERVATION ITEMS & AUDIT TRAIL GRID -->
+          <div class="modal-detail-grid">
+            <!-- Left: Pasien yang Diaudit -->
+            <div class="detail-box">
+              <div class="detail-box-header">
+                <h4>Rincian Pasien yang Diaudit ({{ selectedSubmission.items?.length || 0 }} Sampel)</h4>
+                <a class="edit-link-mini" [routerLink]="['/nsi-indicators', indicator?.id, 'edit', selectedSubmission.id]" (click)="closeDetailModal()">
+                  ✏️ Edit Observasi
+                </a>
+              </div>
+              <div class="sub-table-wrapper" style="overflow-x: auto;">
+                <!-- REK_MED Table in Modal -->
+                <table *ngIf="rawDataCategory === 'REK_MED'" class="sub-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 35px;">No</th>
+                      <th>No. RM / Pasien</th>
+                      <th class="text-center" title="Ada">Ada</th>
+                      <th class="text-center" title="Tepat Waktu">Tepat</th>
+                      <th class="text-center" title="Dapat Dibaca">Baca</th>
+                      <th class="text-center" title="Autentikasi">Auth</th>
+                      <th class="text-center" title="Lengkap">Lengkap</th>
+                      <th class="text-center">Hasil</th>
+                      <th>Catatan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of selectedSubmission.items; track item.itemNumber) {
+                      <tr>
+                        <td>{{ item.itemNumber }}</td>
+                        <td>
+                          <strong>{{ item.patientIdentifier }}</strong>
+                          <div class="text-xs text-muted" *ngIf="getParsedItem(item).patientName">{{ getParsedItem(item).patientName }}</div>
+                        </td>
+                        <td class="text-center"><span class="badge-dot" [class.on]="getParsedItem(item).criteriaAda">{{ getParsedItem(item).criteriaAda ? '1' : '0' }}</span></td>
+                        <td class="text-center"><span class="badge-dot" [class.on]="getParsedItem(item).criteriaTepatWaktu">{{ getParsedItem(item).criteriaTepatWaktu ? '1' : '0' }}</span></td>
+                        <td class="text-center"><span class="badge-dot" [class.on]="getParsedItem(item).criteriaDapatDibaca">{{ getParsedItem(item).criteriaDapatDibaca ? '1' : '0' }}</span></td>
+                        <td class="text-center"><span class="badge-dot" [class.on]="getParsedItem(item).criteriaAutentikasi">{{ getParsedItem(item).criteriaAutentikasi ? '1' : '0' }}</span></td>
+                        <td class="text-center"><span class="badge-dot" [class.on]="getParsedItem(item).criteriaLengkap">{{ getParsedItem(item).criteriaLengkap ? '1' : '0' }}</span></td>
+                        <td class="text-center">
+                          <span class="badge-mini" [class.badge-success]="item.isCompliant" [class.badge-danger]="!item.isCompliant">
+                            {{ item.isCompliant ? '✓ 100%' : '✗ Kurang' }}
+                          </span>
+                        </td>
+                        <td>{{ item.notes || '-' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+
+                <!-- NCP Table in Modal -->
+                <table *ngIf="rawDataCategory === 'NCP'" class="sub-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 35px;">No</th>
+                      <th>No. RM / Pasien</th>
+                      <th>Diagnosa Medis</th>
+                      <th>Tiba Ruang</th>
+                      <th>NCP Dibuat</th>
+                      <th class="text-center">&lt; 7 Jam?</th>
+                      <th class="text-center">Kepatuhan</th>
+                      <th>Catatan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of selectedSubmission.items; track item.itemNumber) {
+                      <tr>
+                        <td>{{ item.itemNumber }}</td>
+                        <td><strong>{{ item.patientIdentifier }}</strong></td>
+                        <td>{{ getParsedItem(item).diagnosis || '-' }}</td>
+                        <td>{{ getParsedItem(item).roomArrivalTime || '-' }}</td>
+                        <td>{{ getParsedItem(item).ncpCreatedTime || '-' }}</td>
+                        <td class="text-center">
+                          <span class="badge-mini" [class.badge-success]="getParsedItem(item).isNcpUnder7h" [class.badge-danger]="!getParsedItem(item).isNcpUnder7h">
+                            {{ getParsedItem(item).isNcpUnder7h ? 'Ya' : 'Over' }}
+                          </span>
+                        </td>
+                        <td class="text-center">
+                          <span class="badge-mini" [class.badge-success]="item.isCompliant" [class.badge-danger]="!item.isCompliant">
+                            {{ item.isCompliant ? '✓ Patuh' : '✗ Tidak' }}
+                          </span>
+                        </td>
+                        <td>{{ item.notes || '-' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+
+                <!-- RNC Table in Modal -->
+                <table *ngIf="rawDataCategory === 'RNC'" class="sub-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 35px;">No</th>
+                      <th>No. RM / Pasien</th>
+                      <th>Kamar / Bed</th>
+                      <th>Bel Ditekan</th>
+                      <th>Bel Direspon</th>
+                      <th>Durasi</th>
+                      <th class="text-center">Hasil</th>
+                      <th>Catatan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of selectedSubmission.items; track item.itemNumber) {
+                      <tr>
+                        <td>{{ item.itemNumber }}</td>
+                        <td><strong>{{ item.patientIdentifier }}</strong></td>
+                        <td>{{ getParsedItem(item).roomNumber || '-' }}</td>
+                        <td>{{ getParsedItem(item).callTime || '-' }}</td>
+                        <td>{{ getParsedItem(item).responseTime || '-' }}</td>
+                        <td><strong>{{ getParsedItem(item).durationMinutes !== undefined ? getParsedItem(item).durationMinutes : 2 }} mnt</strong></td>
+                        <td class="text-center">
+                          <span class="badge-mini" [class.badge-success]="item.isCompliant" [class.badge-danger]="!item.isCompliant">
+                            {{ item.isCompliant ? '✓ &le; 3 Mnt' : '✗ Overtime' }}
+                          </span>
+                        </td>
+                        <td>{{ item.notes || '-' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+
+                <!-- Other Raw Data Categories (Fallback) -->
+                <table *ngIf="rawDataCategory !== 'REK_MED' && rawDataCategory !== 'NCP' && rawDataCategory !== 'RNC'" class="sub-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>No. RM / Pasien</th>
+                      <th>Kepatuhan</th>
+                      <th>Catatan Pemeriksaan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of selectedSubmission.items; track item.itemNumber) {
+                      <tr>
+                        <td>{{ item.itemNumber }}</td>
+                        <td>
+                          <strong>{{ item.patientIdentifier }}</strong>
+                          <div class="text-xs text-muted" *ngIf="getParsedItem(item).patientName">{{ getParsedItem(item).patientName }}</div>
+                        </td>
+                        <td>
+                          <span class="badge-mini" [class.badge-success]="item.isCompliant" [class.badge-danger]="!item.isCompliant">
+                            {{ item.isCompliant ? '✓ Sesuai (Ya)' : '✗ Tidak Sesuai' }}
+                          </span>
+                        </td>
+                        <td>{{ item.notes || '-' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Audit Trail -->
+            <div class="detail-box">
+              <h4>Riwayat Aksi & Audit Trail</h4>
+              <div class="history-timeline">
+                @if (!selectedSubmission.history || selectedSubmission.history.length === 0) {
+                  <p class="text-muted">Belum ada riwayat persetujuan tercatat.</p>
+                }
+                @for (h of selectedSubmission.history; track h.id) {
+                  <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                      <div class="timeline-row">
+                        <strong class="timeline-name">{{ h.actionByName }}</strong>
+                        <span class="timeline-time">{{ h.actionDate | date:'dd MMM yyyy, HH:mm' }}</span>
+                      </div>
+                      <div class="timeline-status">{{ h.fromStatus }} ➔ {{ h.toStatus }}</div>
+                      <div class="timeline-notes" *ngIf="h.notes">“{{ h.notes }}”</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTION FOOTER BAR -->
+          <div class="workflow-action-panel">
+            <div class="panel-role-info">
+              ⚡ <strong>Tindakan Persetujuan (Peran Anda: {{ currentUser?.roleDisplayName }})</strong>
+              <span *ngIf="selectedSubmission.status === 5" class="text-success ml-2">✓ Data audit ini telah Terverifikasi Corporate dan dipublish ke Nursing Web.</span>
+            </div>
+
+            <div class="panel-buttons">
+              <!-- Rejection Input Section -->
+              @if (showRejectInput) {
+                <div class="reject-box">
+                  <textarea [(ngModel)]="rejectNotes" placeholder="Tuliskan catatan alasan penolakan atau instruksi revisi data audit..." class="reject-textarea"></textarea>
+                  <div class="reject-btn-row">
+                    <button class="btn-cancel-reject" (click)="showRejectInput = false">Batal</button>
+                    <button class="btn-confirm-reject" [disabled]="workflowProcessing" (click)="executeAction('reject')">
+                      Konfirmasi Tolak / Minta Revisi
+                    </button>
+                  </div>
+                </div>
+              }
+
+              <!-- Approval Action Buttons by Role -->
+              @if (!showRejectInput && selectedSubmission.status < 5) {
+                <!-- L1 Approve (PSQO) -->
+                @if (canExecuteAction('approve_l1')) {
+                  <button class="btn-action-primary l1" [disabled]="workflowProcessing" (click)="executeAction('approve_l1')">
+                    ✓ Validasi L1 (PSQO / PJ Shift)
+                  </button>
+                }
+
+                <!-- L2 Approve (Kanit) -->
+                @if (canExecuteAction('approve_l2')) {
+                  <button class="btn-action-primary l2" [disabled]="workflowProcessing" (click)="executeAction('approve_l2')">
+                    ✓ Setujui L2 (Kepala Unit / Kanit)
+                  </button>
+                }
+
+                <!-- L3 Approve (Kadept NQ) -->
+                @if (canExecuteAction('approve_l3')) {
+                  <button class="btn-action-primary l3" [disabled]="workflowProcessing" (click)="executeAction('approve_l3')">
+                    ✓ Setujui L3 (Kadept Nursing Quality)
+                  </button>
+                }
+
+                <!-- Verify (NQ Corp) -->
+                @if (canExecuteAction('verify')) {
+                  <button class="btn-action-primary corp" [disabled]="workflowProcessing" (click)="executeAction('verify')">
+                    ★ Verifikasi & Terbitkan (NQ Corporate)
+                  </button>
+                }
+
+                <!-- Reject / Revisi Button -->
+                @if (canExecuteAction('reject')) {
+                  <button class="btn-action-reject" [disabled]="workflowProcessing" (click)="showRejectInput = true">
+                    ✕ Tolak / Minta Revisi
+                  </button>
+                }
+              }
+
+              <button class="btn-close" (click)="closeDetailModal()">Tutup</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

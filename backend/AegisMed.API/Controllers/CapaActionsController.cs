@@ -20,13 +20,19 @@ public class CapaActionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCapas([FromQuery] Guid? siteId)
+    public async Task<IActionResult> GetCapas([FromQuery] string? siteId)
     {
+        Guid? parsedSiteId = null;
+        if (!string.IsNullOrWhiteSpace(siteId) && Guid.TryParse(siteId, out var g))
+        {
+            parsedSiteId = g;
+        }
+
         var query = _context.CapaActions.Include(c => c.HospitalSite).AsQueryable();
 
-        if (siteId.HasValue)
+        if (parsedSiteId.HasValue)
         {
-            query = query.Where(c => c.HospitalSiteId == siteId.Value);
+            query = query.Where(c => c.HospitalSiteId == parsedSiteId.Value);
         }
 
         var list = await query.OrderByDescending(c => c.CreatedDate).ToListAsync();

@@ -19,3 +19,8 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Scratch & extracted temp files
+scratch/
+docx_text.txt
+.commandcode/

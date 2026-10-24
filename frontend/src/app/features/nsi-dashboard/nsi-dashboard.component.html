@@ -1,0 +1,712 @@
+<div class="dashboard-page-wrapper" id="nsiPrintArea">
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       FORMAL HOSPITAL HEADER (PRINT / PDF ONLY)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="hospital-print-header print-only">
+    <div class="print-header-top">
+      <div class="print-logo-section">
+        <div class="print-hospital-badge">
+          <span class="cross-icon">✚</span>
+          <div class="brand-text">
+            <h2>MAYAPADA HOSPITAL</h2>
+            <span>HEALTHCARE GROUP • QUALITY & PATIENT SAFETY DIVISION</span>
+          </div>
+        </div>
+      </div>
+      <div class="print-doc-meta">
+        <div class="doc-badge">DOKUMEN TERKONTROL</div>
+        <div class="doc-code">FORM-MUTU-NSI-REV03</div>
+      </div>
+    </div>
+
+    <div class="print-title-box">
+      <h1 class="print-title">LAPORAN EKSEKUTIF CAPAIAN INDIKATOR MUTU KEPERAWATAN (NSI)</h1>
+      <p class="print-subtitle">National Nursing Quality Indicators Compliance & Continuous Improvement (PDSA) Report</p>
+    </div>
+
+    <div class="print-metadata-grid">
+      <div class="meta-item">
+        <span class="meta-label">Rumah Sakit:</span>
+        <span class="meta-val">{{ selectedSiteName }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Periode Audit:</span>
+        <span class="meta-val">{{ filterMonth === 'ALL' ? 'Semua Periode (Kumulatif)' : filterMonth }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Tanggal Cetak:</span>
+        <span class="meta-val">{{ printDate }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Dicetak Oleh:</span>
+        <span class="meta-val">{{ currentUser?.fullName || 'Petugas Mutu' }} ({{ currentUser?.roleDisplayName || currentUser?.roleName || 'Staff' }})</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════════════════════════════════
+       1. HERO HEADER BANNER & FILTER TOOLBAR
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="dash-hero-banner">
+    <div class="hero-top-row">
+      <div class="hero-title-block">
+        <div class="hero-badge-tag">
+          <span class="badge-icon">🩺</span>
+          <span>NURSING QUALITY IMPROVEMENT (NursQI) SYSTEM</span>
+        </div>
+        <h1 class="hero-main-title">Dashboard Mutu Keperawatan (NSI)</h1>
+        <p class="hero-sub-title">
+          Monitoring terpusat 14 Indikator Mutu Keperawatan terstandar, evaluasi persentase capaian target numerator/denominator, tren bulanan, dan integrasi PDSA.
+        </p>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="hero-actions-cluster no-print">
+        <button type="button" class="btn-dash-action primary" (click)="printDashboard()" title="Cetak Laporan Dashboard ke PDF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Cetak PDF</span>
+        </button>
+
+        <button type="button" class="btn-dash-action icon-only" (click)="loadDashboard()" title="Segarkan Data Real-Time">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Control Bar -->
+    <div class="hero-filter-bar no-print">
+      <!-- Period Switcher Buttons -->
+      <div class="period-switcher-group">
+        <button type="button" class="period-btn" [class.active]="filterMonth === '2026-10'" (click)="setPeriod('2026-10')">
+          Oktober 2026 (Bulan Aktif)
+        </button>
+        <button type="button" class="period-btn" [class.active]="filterMonth === 'ALL'" (click)="setPeriod('ALL')">
+          Semua Periode (Kumulatif)
+        </button>
+      </div>
+
+      <!-- Periode Month -->
+      <div class="filter-chip">
+        <label for="nsiMonthSelect" class="chip-label">📅 Pilih Bulan:</label>
+        <input id="nsiMonthSelect" type="month" [(ngModel)]="filterMonth" (change)="onFilterChange()" class="chip-input-month">
+      </div>
+
+      <!-- Site Filter (Corporate / Admin) -->
+      <div class="filter-chip" *ngIf="authService.isCorporate || authService.isAdmin">
+        <label for="nsiSiteSelect" class="chip-label">🏢 Rumah Sakit:</label>
+        <select id="nsiSiteSelect" [(ngModel)]="selectedSiteId" (change)="onSiteChange()" class="chip-select">
+          <option [ngValue]="undefined">Semua Rumah Sakit (Mayapada Group)</option>
+          <option *ngFor="let s of sites" [ngValue]="s.id">{{ s.name }} ({{ s.code }})</option>
+        </select>
+      </div>
+
+      <!-- Fixed Site Tag for Unit Bound -->
+      <div class="fixed-site-pill" *ngIf="!authService.isCorporate && !authService.isAdmin && currentUser">
+        <span class="site-icon">🏥</span>
+        <span class="site-name">{{ currentUser.hospitalSiteName }}</span>
+      </div>
+
+      <!-- Unit / Ruang Rawat Filter -->
+      <div class="filter-chip">
+        <label for="nsiUnitSelect" class="chip-label">🚪 Unit / Ruang:</label>
+        <select id="nsiUnitSelect" [(ngModel)]="selectedUnitId" (change)="onFilterChange()" class="chip-select">
+          <option [ngValue]="undefined">Semua Ruang Perawatan</option>
+          <option *ngFor="let u of units" [ngValue]="u.id">{{ u.name }} ({{ u.code }})</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="dash-loading-card">
+      <div class="spinner-modern"></div>
+      <p>Memuat data analitik mutu keperawatan (NSI)...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error && !loading) {
+    <div class="dash-error-card">
+      <h3>Gagal Memuat Dashboard Mutu</h3>
+      <p>{{ errorMessage }}</p>
+      <button class="btn-retry" (click)="loadDashboard()">Coba Lagi</button>
+    </div>
+  }
+
+  <!-- Dashboard Main Content -->
+  @if (!loading && !error && dashboardData) {
+    <div class="dash-content-grid">
+      
+      <!-- ══════════════════════════════════════════════════════════════════════
+           2. EXECUTIVE HIGHLIGHT TILES & GAUGE
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="exec-metrics-row">
+        
+        <!-- Circular Gauge Card -->
+        <div class="exec-gauge-card">
+          <div class="gauge-card-header">
+            <div>
+              <span class="card-tag-sm">CAPAIAN KUMULATIF</span>
+              <h2 class="gauge-card-title">Kepatuhan Mutu NSI</h2>
+            </div>
+            <span class="benchmark-pill" [class.pass]="dashboardData.overallComplianceRate >= 85" [class.fail]="dashboardData.overallComplianceRate < 85">
+              Target: ≥ 85%
+            </span>
+          </div>
+
+          <div class="gauge-visual-wrap">
+            <svg viewBox="0 0 130 130" width="130" height="130" class="gauge-svg">
+              <circle cx="65" cy="65" r="54" fill="none" stroke="#e2e8f0" stroke-width="10" class="gauge-circle-bg" />
+              <circle cx="65" cy="65" r="54" fill="none" stroke-width="10" stroke-linecap="round"
+                      class="gauge-circle-progress"
+                      [ngClass]="getOverallProgressClass(dashboardData.overallComplianceRate)"
+                      [style.stroke-dashoffset]="getGaugeDashOffset(dashboardData.overallComplianceRate)" />
+            </svg>
+            <div class="gauge-center-text">
+              <span class="gauge-val" [ngClass]="getOverallScoreClass(dashboardData.overallComplianceRate)">
+                {{ dashboardData.overallComplianceRate }}%
+              </span>
+              <span class="gauge-sub">Rata-rata</span>
+            </div>
+          </div>
+
+          <div class="gauge-card-footer">
+            <span class="text-xs text-muted">Berdasarkan {{ dashboardData.totalPatients }} sampel pasien terverifikasi</span>
+          </div>
+        </div>
+
+        <!-- Metric Tile 1: Total Sampel Pasien (Numerator / Denominator) -->
+        <div class="metric-kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-tag">VOLUME OBSERVASI</span>
+            <span class="kpi-icon-box bg-blue">📋</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-val-row">
+              <span class="kpi-val">{{ dashboardData.totalPatients }}</span>
+              <span class="kpi-unit">pasien</span>
+            </div>
+            <div class="kpi-sub-line">
+              <span class="text-emerald font-semibold">{{ dashboardData.compliantPatients }} Sesuai (Ya)</span>
+              <span class="text-muted">• {{ dashboardData.totalAudits }} formulir audit</span>
+            </div>
+          </div>
+          <div class="kpi-progress-bar">
+            <div class="kpi-progress-fill bg-blue" [style.width.%]="dashboardData.overallComplianceRate"></div>
+          </div>
+        </div>
+
+        <!-- Metric Tile 2: Indikator Memenuhi Target -->
+        <div class="metric-kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-tag">STATUS TARGET MUTU</span>
+            <span class="kpi-icon-box bg-emerald">🎯</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-val-row">
+              <span class="kpi-val text-emerald">{{ dashboardData.targetMetCount }}</span>
+              <span class="kpi-unit">/ {{ dashboardData.indicators.length }} Indikator</span>
+            </div>
+            <div class="kpi-sub-line">
+              <span class="text-muted">Memenuhi standar mutu akreditasi Kemenkes</span>
+            </div>
+          </div>
+          <div class="kpi-progress-bar">
+            <div class="kpi-progress-fill bg-emerald" [style.width.%]="dashboardData.indicators.length > 0 ? (dashboardData.targetMetCount / dashboardData.indicators.length * 100) : 0"></div>
+          </div>
+        </div>
+
+        <!-- Metric Tile 3: Indikator Wajib PDSA (Ketidaktercapaian) -->
+        <div class="metric-kpi-card" [class.alert-border]="dashboardData.needPdsaCount > 0">
+          <div class="kpi-header">
+            <span class="kpi-tag text-rose">RENCANA TINDAK LANJUT</span>
+            <span class="kpi-icon-box bg-rose">⚠️</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-val-row">
+              <span class="kpi-val text-rose">{{ dashboardData.needPdsaCount }}</span>
+              <span class="kpi-unit">Perlu PDSA</span>
+            </div>
+            <div class="kpi-sub-line">
+              <span [class.text-rose]="dashboardData.needPdsaCount > 0" [class.text-muted]="dashboardData.needPdsaCount === 0">
+                {{ dashboardData.needPdsaCount > 0 ? 'Wajib isi analisa & perbaikan per bulan' : 'Semua indikator memenuhi target' }}
+              </span>
+            </div>
+          </div>
+          <a class="kpi-action-link" routerLink="/pdsa">Buka Modul PDSA ➔</a>
+        </div>
+
+        <!-- Metric Tile 4: Alur Approval Berjenjang -->
+        <div class="metric-kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-tag">STATUS VERIFIKASI DOKUMEN</span>
+            <span class="kpi-icon-box bg-purple">📑</span>
+          </div>
+          <div class="kpi-approval-mini-list">
+            <div class="appr-item">
+              <span class="appr-label">Menunggu L1 (PSQO):</span>
+              <span class="appr-pill amber">{{ dashboardData.approvalBreakdown.submitted }}</span>
+            </div>
+            <div class="appr-item">
+              <span class="appr-label">Menunggu L2 (Kanit):</span>
+              <span class="appr-pill blue">{{ dashboardData.approvalBreakdown.approvedL1 }}</span>
+            </div>
+            <div class="appr-item">
+              <span class="appr-label">Menunggu L3 (Kadept):</span>
+              <span class="appr-pill purple">{{ dashboardData.approvalBreakdown.approvedL2 }}</span>
+            </div>
+            <div class="appr-item">
+              <span class="appr-label">Terverifikasi Final:</span>
+              <span class="appr-pill green">{{ dashboardData.approvalBreakdown.verified }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           MEDBLAZE INFINI STANDARD AUDIT ANALYTICS (DOKUMEN PERMINTAAN ACUAN)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="medblaze-section">
+        <div class="medblaze-section-header">
+          <div class="sec-left">
+            <span class="medblaze-badge">DOKUMEN PERMINTAAN ACUAN (MEDBLAZE INFINI)</span>
+            <h2 class="medblaze-sec-title">Analitik Audit Mutu Rawat Inap &amp; Rawat Jalan</h2>
+            <p class="medblaze-sec-sub">Visualisasi distribusi proporsi pasien dan kepatuhan audit klinis sesuai standar sistem Medblaze Infini</p>
+          </div>
+          <div class="sec-right">
+            <span class="medblaze-sync-pill">
+              <span class="pulse-dot"></span> Sinkronisasi Real-Time
+            </span>
+          </div>
+        </div>
+
+        <div class="medblaze-grid" *ngIf="analyticsCharts">
+          <!-- Card 1: Select - Out patient or In-patient -->
+          <div class="medblaze-card">
+            <div class="mbz-card-header">
+              <span class="mbz-title">Select - Out patient or In-patient</span>
+              <div class="mbz-actions">
+                <span class="mbz-icon mbz-cloud" title="Download">☁️</span>
+                <span class="mbz-icon mbz-bookmark" title="Bookmark">🔖</span>
+                <span class="mbz-icon mbz-dots" title="Trik">∴</span>
+                <span class="mbz-icon mbz-wait" title="Durasi">⏳</span>
+                <span class="mbz-icon mbz-sync" (click)="loadDashboard()" title="Refresh">🔄</span>
+                <span class="mbz-icon mbz-pin" title="Pin / Filter">📌</span>
+              </div>
+            </div>
+            <div class="mbz-chart-wrap">
+              <svg viewBox="0 0 340 250" class="mbz-svg-pie">
+                <path [attr.d]="analyticsCharts.pt.path1" fill="#3b1d4a" class="mbz-slice hover-lift"></path>
+                <path [attr.d]="analyticsCharts.pt.path2" fill="#792875" class="mbz-slice hover-lift"></path>
+                
+                <polyline [attr.points]="analyticsCharts.pt.line1" fill="none" stroke="#792875" stroke-width="1.4"></polyline>
+                <polyline [attr.points]="analyticsCharts.pt.line2" fill="none" stroke="#3b1d4a" stroke-width="1.4"></polyline>
+                
+                <text [attr.x]="analyticsCharts.pt.label1X" [attr.y]="analyticsCharts.pt.label1Y" [attr.text-anchor]="analyticsCharts.pt.anchor1" class="mbz-callout-text">
+                  {{ analyticsCharts.pt.val1 }} ({{ analyticsCharts.pt.pct1 }}%)
+                </text>
+                <text [attr.x]="analyticsCharts.pt.label2X" [attr.y]="analyticsCharts.pt.label2Y" [attr.text-anchor]="analyticsCharts.pt.anchor2" class="mbz-callout-text">
+                  {{ analyticsCharts.pt.val2 }} ({{ analyticsCharts.pt.pct2 }}%)
+                </text>
+              </svg>
+            </div>
+            <div class="mbz-legend-wrap">
+              <div class="mbz-legend-title">Legend</div>
+              <div class="mbz-legend-items">
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#3b1d4a"></span> In-patient</span>
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#792875"></span> Out-patient</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Risk screening -->
+          <div class="medblaze-card">
+            <div class="mbz-card-header">
+              <span class="mbz-title">Risk screening</span>
+              <div class="mbz-actions">
+                <span class="mbz-icon mbz-cloud" title="Download">☁️</span>
+                <span class="mbz-icon mbz-bookmark" title="Bookmark">🔖</span>
+                <span class="mbz-icon mbz-dots" title="Trik">∴</span>
+                <span class="mbz-icon mbz-wait" title="Durasi">⏳</span>
+                <span class="mbz-icon mbz-sync" (click)="loadDashboard()" title="Refresh">🔄</span>
+                <span class="mbz-icon mbz-pin" title="Pin / Filter">📌</span>
+              </div>
+            </div>
+            <div class="mbz-chart-wrap">
+              <svg viewBox="0 0 340 250" class="mbz-svg-pie">
+                <path [attr.d]="analyticsCharts.risk.path1" fill="#689f38" class="mbz-slice hover-lift"></path>
+                <path [attr.d]="analyticsCharts.risk.path2" fill="#d81b60" class="mbz-slice hover-lift"></path>
+                
+                <polyline [attr.points]="analyticsCharts.risk.line1" fill="none" stroke="#689f38" stroke-width="1.4"></polyline>
+                <polyline [attr.points]="analyticsCharts.risk.line2" fill="none" stroke="#d81b60" stroke-width="1.4"></polyline>
+                
+                <text [attr.x]="analyticsCharts.risk.label1X" [attr.y]="analyticsCharts.risk.label1Y" [attr.text-anchor]="analyticsCharts.risk.anchor1" class="mbz-callout-text">
+                  {{ analyticsCharts.risk.val1 }} ({{ analyticsCharts.risk.pct1 }}%)
+                </text>
+                <text [attr.x]="analyticsCharts.risk.label2X" [attr.y]="analyticsCharts.risk.label2Y" [attr.text-anchor]="analyticsCharts.risk.anchor2" class="mbz-callout-text">
+                  {{ analyticsCharts.risk.val2 }} ({{ analyticsCharts.risk.pct2 }}%)
+                </text>
+              </svg>
+            </div>
+            <div class="mbz-legend-wrap">
+              <div class="mbz-legend-title">Legend</div>
+              <div class="mbz-legend-items">
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#689f38"></span> Yes</span>
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#d81b60"></span> No</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Initial assessment -->
+          <div class="medblaze-card">
+            <div class="mbz-card-header">
+              <span class="mbz-title">Initial assessment</span>
+              <div class="mbz-actions">
+                <span class="mbz-icon mbz-cloud" title="Download">☁️</span>
+                <span class="mbz-icon mbz-bookmark" title="Bookmark">🔖</span>
+                <span class="mbz-icon mbz-dots" title="Trik">∴</span>
+                <span class="mbz-icon mbz-wait" title="Durasi">⏳</span>
+                <span class="mbz-icon mbz-sync" (click)="loadDashboard()" title="Refresh">🔄</span>
+                <span class="mbz-icon mbz-pin" title="Pin / Filter">📌</span>
+              </div>
+            </div>
+            <div class="mbz-chart-wrap">
+              <svg viewBox="0 0 340 250" class="mbz-svg-pie">
+                <path [attr.d]="analyticsCharts.init.path1" fill="#e91e63" class="mbz-slice hover-lift"></path>
+                <path [attr.d]="analyticsCharts.init.path2" fill="#4a154b" class="mbz-slice hover-lift"></path>
+                
+                <polyline [attr.points]="analyticsCharts.init.line1" fill="none" stroke="#e91e63" stroke-width="1.4"></polyline>
+                <polyline [attr.points]="analyticsCharts.init.line2" fill="none" stroke="#4a154b" stroke-width="1.4"></polyline>
+                
+                <text [attr.x]="analyticsCharts.init.label1X" [attr.y]="analyticsCharts.init.label1Y" [attr.text-anchor]="analyticsCharts.init.anchor1" class="mbz-callout-text">
+                  {{ analyticsCharts.init.val1 }} ({{ analyticsCharts.init.pct1 }}%)
+                </text>
+                <text [attr.x]="analyticsCharts.init.label2X" [attr.y]="analyticsCharts.init.label2Y" [attr.text-anchor]="analyticsCharts.init.anchor2" class="mbz-callout-text">
+                  {{ analyticsCharts.init.val2 }} ({{ analyticsCharts.init.pct2 }}%)
+                </text>
+              </svg>
+            </div>
+            <div class="mbz-legend-wrap">
+              <div class="mbz-legend-title">Legend</div>
+              <div class="mbz-legend-items">
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#e91e63"></span> Yes</span>
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#4a154b"></span> No</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Re-assessment -->
+          <div class="medblaze-card">
+            <div class="mbz-card-header">
+              <span class="mbz-title">Re-assessment</span>
+              <div class="mbz-actions">
+                <span class="mbz-icon mbz-cloud" title="Download">☁️</span>
+                <span class="mbz-icon mbz-bookmark" title="Bookmark">🔖</span>
+                <span class="mbz-icon mbz-dots" title="Trik">∴</span>
+                <span class="mbz-icon mbz-wait" title="Durasi">⏳</span>
+                <span class="mbz-icon mbz-sync" (click)="loadDashboard()" title="Refresh">🔄</span>
+                <span class="mbz-icon mbz-pin" title="Pin / Filter">📌</span>
+              </div>
+            </div>
+            <div class="mbz-chart-wrap">
+              <svg viewBox="0 0 340 250" class="mbz-svg-pie">
+                <path [attr.d]="analyticsCharts.reassess.path1" fill="#7cb342" class="mbz-slice hover-lift"></path>
+                <path [attr.d]="analyticsCharts.reassess.path2" fill="#ec4899" class="mbz-slice hover-lift"></path>
+                
+                <polyline [attr.points]="analyticsCharts.reassess.line1" fill="none" stroke="#7cb342" stroke-width="1.4"></polyline>
+                <polyline [attr.points]="analyticsCharts.reassess.line2" fill="none" stroke="#ec4899" stroke-width="1.4"></polyline>
+                
+                <text [attr.x]="analyticsCharts.reassess.label1X" [attr.y]="analyticsCharts.reassess.label1Y" [attr.text-anchor]="analyticsCharts.reassess.anchor1" class="mbz-callout-text">
+                  {{ analyticsCharts.reassess.val1 }} ({{ analyticsCharts.reassess.pct1 }}%)
+                </text>
+                <text [attr.x]="analyticsCharts.reassess.label2X" [attr.y]="analyticsCharts.reassess.label2Y" [attr.text-anchor]="analyticsCharts.reassess.anchor2" class="mbz-callout-text">
+                  {{ analyticsCharts.reassess.val2 }} ({{ analyticsCharts.reassess.pct2 }}%)
+                </text>
+              </svg>
+            </div>
+            <div class="mbz-legend-wrap">
+              <div class="mbz-legend-title">Legend</div>
+              <div class="mbz-legend-items">
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#7cb342"></span> Yes</span>
+                <span class="mbz-pill"><span class="mbz-dot" style="background:#ec4899"></span> No</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           3. 4 KATEGORI MUTU NSI BREAKDOWN & TREN BULANAN
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="dash-two-col-layout">
+        
+        <!-- Left: 4 Kategori Mutu NSI Cards -->
+        <div class="dash-panel-card">
+          <div class="panel-card-header">
+            <div>
+              <h2 class="panel-title">Capaian Berdasarkan 4 Kategori Mutu NSI</h2>
+              <span class="panel-subtitle">Sesuai format audit akreditasi keperawatan NursQI</span>
+            </div>
+          </div>
+
+          <div class="category-breakdown-list">
+            @for (cat of dashboardData.categoryBreakdown; track cat.categoryId) {
+              <div class="cat-progress-card">
+                <div class="cat-card-header">
+                  <div class="cat-info">
+                    <span class="cat-code-badge">{{ cat.categoryCode }}</span>
+                    <span class="cat-title">{{ cat.categoryName }}</span>
+                  </div>
+                  <div class="cat-score">
+                    <span class="score-percent" [ngClass]="getOverallScoreClass(cat.achievementRate)">{{ cat.achievementRate }}%</span>
+                    <span class="score-target">Target: ≥ 85%</span>
+                  </div>
+                </div>
+
+                <div class="cat-progress-track">
+                  <div class="cat-progress-bar" [ngClass]="getOverallProgressClass(cat.achievementRate)" [style.width.%]="cat.achievementRate"></div>
+                </div>
+
+                <div class="cat-card-footer">
+                  <span>{{ cat.indicatorCount }} Indikator</span>
+                  <span>{{ cat.numerator }} Ya / {{ cat.denominator }} Total Sampel</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Right: Tren Kepatuhan Bulanan (6 Bulan Terakhir) -->
+        <div class="dash-panel-card">
+          <div class="panel-card-header">
+            <div>
+              <h2 class="panel-title">Tren Kepatuhan Bulanan NSI</h2>
+              <span class="panel-subtitle">Perkembangan capaian rata-rata 6 bulan terakhir</span>
+            </div>
+            <span class="benchmark-line-legend">
+              <span class="legend-dash"></span> Target 85%
+            </span>
+          </div>
+
+          <div class="trend-bars-container">
+            @for (trend of dashboardData.monthlyTrends; track trend.month) {
+              <div class="trend-bar-col">
+                <div class="trend-bar-track">
+                  <!-- 85% Target threshold line -->
+                  <div class="target-threshold-line" style="bottom: 85%;"></div>
+                  <!-- Bar Fill -->
+                  <div class="trend-bar-fill" 
+                       [ngClass]="getOverallProgressClass(trend.complianceRate)"
+                       [style.height.%]="trend.complianceRate > 0 ? trend.complianceRate : 4"
+                       [title]="trend.monthLabel + ': ' + trend.complianceRate + '% (' + trend.totalPatients + ' pasien)'">
+                    <span class="bar-val-tooltip" *ngIf="trend.complianceRate > 0">{{ trend.complianceRate }}%</span>
+                  </div>
+                </div>
+                <div class="trend-bar-label">{{ trend.monthLabel }}</div>
+                <div class="trend-bar-sub">{{ trend.totalPatients }} psn</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           4. TABEL REKAPITULASI CAPAIAN 14 INDIKATOR MUTU KEPERAWATAN
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="dash-table-card">
+        <div class="table-card-header">
+          <div class="header-left">
+            <h2 class="panel-title">Rekapitulasi Capaian 14 Indikator Mutu NSI</h2>
+            <span class="panel-subtitle">Daftar capaian numerator, denominator, dan evaluasi kepatuhan target klinis</span>
+          </div>
+          
+          <!-- Category Filter Tabs -->
+          <div class="table-filter-tabs no-print">
+            <button type="button" class="tab-btn" [class.active]="activeCategoryFilter === 'ALL'" (click)="activeCategoryFilter = 'ALL'">
+              Semua ({{ dashboardData.indicators.length }})
+            </button>
+            <button type="button" class="tab-btn" [class.active]="activeCategoryFilter === 'DOK-KEP'" (click)="activeCategoryFilter = 'DOK-KEP'">
+              NCP & RNC
+            </button>
+            <button type="button" class="tab-btn" [class.active]="activeCategoryFilter === 'REK-MED'" (click)="activeCategoryFilter = 'REK-MED'">
+              Rekam Medis (8)
+            </button>
+            <button type="button" class="tab-btn" [class.active]="activeCategoryFilter === 'EDUKASI'" (click)="activeCategoryFilter = 'EDUKASI'">
+              Edukasi
+            </button>
+            <button type="button" class="tab-btn" [class.active]="activeCategoryFilter === 'MONITOR'" (click)="activeCategoryFilter = 'MONITOR'">
+              TTV, Nyeri & EWS
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Toolbar: Search & Status Filters -->
+        <div class="table-toolbar-row no-print">
+          <div class="search-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" [(ngModel)]="searchQuery" placeholder="Cari kode atau nama indikator keperawatan..." class="search-input">
+          </div>
+
+          <div class="status-tab-group">
+            <button type="button" class="status-tab" [class.active]="statusFilterTab === 'ALL'" (click)="statusFilterTab = 'ALL'">
+              Semua Status
+            </button>
+            <button type="button" class="status-tab success" [class.active]="statusFilterTab === 'MET'" (click)="statusFilterTab = 'MET'">
+              ✓ Memenuhi Target ({{ dashboardData.targetMetCount }})
+            </button>
+            <button type="button" class="status-tab danger" [class.active]="statusFilterTab === 'NEED_PDSA'" (click)="statusFilterTab = 'NEED_PDSA'">
+              ⚠️ Butuh PDSA ({{ dashboardData.needPdsaCount }})
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Responsive -->
+        <div class="table-responsive">
+          <table class="nsi-dash-table">
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">NO</th>
+                <th style="width: 130px;">KODE</th>
+                <th>NAMA INDIKATOR MUTU KEPERAWATAN</th>
+                <th style="width: 170px;">KATEGORI</th>
+                <th style="width: 130px; text-align: center;">NUMERATOR (YA)</th>
+                <th style="width: 130px; text-align: center;">DENOMINATOR</th>
+                <th style="width: 140px; text-align: center;">CAPAIAN AKTUAL</th>
+                <th style="width: 110px; text-align: center;">TARGET</th>
+                <th style="width: 130px; text-align: center;">STATUS MUTU</th>
+                <th style="width: 140px; text-align: center;" class="no-print">AKSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (filteredIndicators.length === 0) {
+                <tr>
+                  <td colspan="10" class="empty-table-cell">
+                    Tidak ditemukan indikator mutu sesuai filter pencarian yang dipilih.
+                  </td>
+                </tr>
+              }
+              @for (ind of filteredIndicators; track ind.indicatorId; let idx = $index) {
+                <tr class="table-row-hover">
+                  <td class="text-center font-mono">{{ idx + 1 }}</td>
+                  <td>
+                    <span class="code-pill">{{ ind.indicatorCode }}</span>
+                  </td>
+                  <td>
+                    <div class="ind-name-text">{{ ind.indicatorName }}</div>
+                  </td>
+                  <td>
+                    <span class="cat-pill">{{ ind.categoryName }}</span>
+                  </td>
+                  <td class="text-center font-mono font-semibold text-emerald">
+                    {{ ind.numerator }}
+                  </td>
+                  <td class="text-center font-mono font-medium">
+                    {{ ind.denominator }}
+                  </td>
+                  <td class="text-center">
+                    <span class="achievement-badge" [class.met]="ind.isTargetMet" [class.unmet]="!ind.isTargetMet">
+                      {{ ind.achievementRate }}%
+                    </span>
+                  </td>
+                  <td class="text-center font-mono text-muted">
+                    ≥ {{ ind.targetPercentage }}%
+                  </td>
+                  <td class="text-center">
+                    @if (ind.denominator === 0) {
+                      <span class="status-pill gray">Belum Ada Audit</span>
+                    } @else if (ind.isTargetMet) {
+                      <span class="status-pill green">✓ Tercapai</span>
+                    } @else {
+                      <span class="status-pill red">⚠️ Wajib PDSA</span>
+                    }
+                  </td>
+                  <td class="text-center no-print">
+                    <div class="action-cell">
+                      <a class="btn-table-link" [routerLink]="['/nsi-indicators', ind.indicatorId]" title="Lihat Raw Data Observasi & Linimasa Pasien">
+                        Lihat Data
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           5. PERINGKAT KEPATUHAN UNIT KEPERAWATAN
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="dash-panel-card" *ngIf="dashboardData.unitRankings && dashboardData.unitRankings.length > 0">
+        <div class="panel-card-header">
+          <div>
+            <h2 class="panel-title">Peringkat Kepatuhan Unit / Ruang Rawat</h2>
+            <span class="panel-subtitle">Evaluasi konsistensi mutu asuhan keperawatan lintas instalasi perawatan</span>
+          </div>
+        </div>
+
+        <div class="unit-ranking-grid">
+          @for (unit of dashboardData.unitRankings; track unit.unitId; let rank = $index) {
+            <div class="unit-card-rank">
+              <div class="rank-badge" [class.top-1]="rank === 0" [class.top-2]="rank === 1" [class.top-3]="rank === 2">
+                #{{ rank + 1 }}
+              </div>
+              <div class="unit-meta">
+                <span class="unit-name">{{ unit.unitName }}</span>
+                <span class="unit-site">{{ unit.siteCode }} • {{ unit.totalAudits }} Formulir • {{ unit.totalPatients }} Sampel Pasien</span>
+              </div>
+              <div class="unit-score-block">
+                <span class="unit-score-val" [ngClass]="getOverallScoreClass(unit.complianceRate)">
+                  {{ unit.complianceRate }}%
+                </span>
+                <span class="unit-status-tag" [class.pass]="unit.isTargetMet" [class.fail]="!unit.isTargetMet">
+                  {{ unit.isTargetMet ? 'Sesuai Target' : 'Di Bawah Standar' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           6. FORMAL SIGNATURE VERIFICATION BLOCK (PRINT / PDF ONLY)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div class="print-signature-section print-only">
+        <div class="sig-note">
+          Laporan ini dihasilkan secara otomatis melalui Sistem AegisMed Healthcare Quality Management System. Data capaian mutu telah divalidasi dan disetujui sesuai jenjang otorisasi komite mutu keperawatan.
+        </div>
+        <div class="sig-grid">
+          <div class="sig-box">
+            <span class="sig-role">Disiapkan Oleh (L1):</span>
+            <span class="sig-title">Petugas Pengumpul / Komite Keperawatan</span>
+            <div class="sig-space"></div>
+            <div class="sig-line"></div>
+            <span class="sig-name">( .................................................... )</span>
+            <span class="sig-date">Tanggal: ____ / ____ / 2026</span>
+          </div>
+
+          <div class="sig-box">
+            <span class="sig-role">Diverifikasi Oleh (L2):</span>
+            <span class="sig-title">Kepala Unit / Kepala Bidang Keperawatan</span>
+            <div class="sig-space"></div>
+            <div class="sig-line"></div>
+            <span class="sig-name">( .................................................... )</span>
+            <span class="sig-date">Tanggal: ____ / ____ / 2026</span>
+          </div>
+
+          <div class="sig-box">
+            <span class="sig-role">Disetujui Oleh (L3):</span>
+            <span class="sig-title">Direktur Medis & Keperawatan / Direktur RS</span>
+            <div class="sig-space"></div>
+            <div class="sig-line"></div>
+            <span class="sig-name">( .................................................... )</span>
+            <span class="sig-date">Tanggal: ____ / ____ / 2026</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+</div>

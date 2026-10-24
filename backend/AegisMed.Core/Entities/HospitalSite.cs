@@ -9,4 +9,6 @@ public class HospitalSite
     
     // Navigation properties
     public ICollection<CapaAction> CapaActions { get; set; } = new List<CapaAction>();
+    public ICollection<HospitalUnit> Units { get; set; } = new List<HospitalUnit>();
+    public ICollection<AppUser> Users { get; set; } = new List<AppUser>();
 }

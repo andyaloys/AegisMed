@@ -1,0 +1,496 @@
+<div class="nsi-container">
+  <!-- Top Banner / Header -->
+  <div class="nsi-header-banner">
+    <div class="banner-title-col">
+      <div class="banner-badge">Nursing Quality Improvement (NursQI) System</div>
+      <h1 class="banner-title">Modul Audit Nursing Sensitive Indicators (NSI)</h1>
+      <p class="banner-desc">
+        Pengumpulan data observasi mutu keperawatan 14 indikator terstandar, perhitungan realtime numerator/denominator, dan alur approval berjenjang multi-tier.
+      </p>
+    </div>
+    <div class="banner-actions">
+      <button class="btn-primary-action" (click)="openInputModal()" *ngIf="authService.canInputAudit">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>+ Input Audit Baru</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-box bg-blue">📝</div>
+      <div class="kpi-details">
+        <span class="kpi-label">Total Audit Bulan Ini</span>
+        <span class="kpi-value">{{ submissions.length }}</span>
+        <span class="kpi-hint">Periode {{ filterMonth }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-box bg-amber">⏳</div>
+      <div class="kpi-details">
+        <span class="kpi-label">Menunggu Approval L1 / L2</span>
+        <span class="kpi-value warning">{{ (submissions | slice:0).filter(hasPendingL1OrL2).length }}</span>
+        <span class="kpi-hint">Antrian PSQO & Kanit</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-box bg-purple">⭐</div>
+      <div class="kpi-details">
+        <span class="kpi-label">Menunggu Review Kadept NQ</span>
+        <span class="kpi-value purple">{{ (submissions | slice:0).filter(hasPendingL3).length }}</span>
+        <span class="kpi-hint">Approval Tingkat RS</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-box bg-emerald">👑</div>
+      <div class="kpi-details">
+        <span class="kpi-label">Terverifikasi Corporate</span>
+        <span class="kpi-value success">{{ (submissions | slice:0).filter(hasVerified).length }}</span>
+        <span class="kpi-hint">Sinkron ke Nursing Web</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Navigation Bar -->
+  <div class="nsi-controls-panel">
+    <div class="controls-left">
+      <!-- Tabs -->
+      <div class="tab-pill-group">
+        <button class="tab-pill" [class.active]="activeTab === 'submissions'" (click)="activeTab = 'submissions'">
+          📋 Daftar Pengajuan Audit ({{ submissions.length }})
+        </button>
+        <button class="tab-pill" [class.active]="activeTab === 'summary'" (click)="activeTab = 'summary'">
+          📊 Capaian 14 Indikator Mutu
+        </button>
+      </div>
+    </div>
+
+    <div class="controls-right filters-inline">
+      <!-- Month Filter -->
+      <div class="filter-item">
+        <label>Periode:</label>
+        <input type="month" [(ngModel)]="filterMonth" (change)="onFilterChange()" class="filter-input-date" />
+      </div>
+
+      <!-- Site Filter -->
+      <div class="filter-item" *ngIf="authService.isCorporate || authService.isAdmin">
+        <label>Rumah Sakit:</label>
+        <select [(ngModel)]="filterSiteId" (change)="onFilterChange()" class="filter-select">
+          <option value="">Semua Rumah Sakit</option>
+          <option *ngFor="let site of sites" [value]="site.id">{{ site.name }} ({{ site.code }})</option>
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="filter-item">
+        <label>Status:</label>
+        <select [(ngModel)]="filterStatus" (change)="onFilterChange()" class="filter-select">
+          <option value="">Semua Status</option>
+          <option value="1">Menunggu PSQO (L1)</option>
+          <option value="2">Approved L1 (PSQO)</option>
+          <option value="3">Approved L2 (Kanit)</option>
+          <option value="4">Approved L3 (Kadept NQ)</option>
+          <option value="5">Terverifikasi Corporate</option>
+          <option value="6">Ditolak / Revisi</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1: Submissions Table -->
+  <div class="tab-content" *ngIf="activeTab === 'submissions'">
+    <div class="table-card">
+      <div class="table-responsive">
+        <table class="nsi-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Unit & Rumah Sakit</th>
+              <th>Indikator Mutu NSI</th>
+              <th class="text-center">Numerator / Denominator</th>
+              <th class="text-center">Capaian (%)</th>
+              <th class="text-center">Status Approval</th>
+              <th class="text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="loading">
+              <td colspan="7" class="text-center py-8">
+                <div class="spinner-small"></div>
+                <span>Memuat data audit NSI...</span>
+              </td>
+            </tr>
+            <tr *ngIf="!loading && submissions.length === 0">
+              <td colspan="7" class="text-center py-8 text-muted">
+                Belum ada data audit NSI untuk filter yang dipilih. Silakan klik <strong>"+ Input Audit Baru"</strong> untuk memulai.
+              </td>
+            </tr>
+            <tr *ngFor="let s of submissions" class="hover-row">
+              <td class="font-medium whitespace-nowrap">
+                {{ s.auditDate | slice:0:10 }}
+                <div class="text-xs text-muted">Diajukan oleh: {{ s.submittedByName || 'PIC Unit' }}</div>
+              </td>
+              <td>
+                <div class="unit-badge">{{ s.hospitalUnitName }}</div>
+                <div class="text-xs text-muted">{{ s.hospitalSiteName }}</div>
+              </td>
+              <td>
+                <div class="font-semibold text-primary">{{ s.indicatorName }}</div>
+                <div class="text-xs text-muted">{{ s.indicatorCode }}</div>
+              </td>
+              <td class="text-center">
+                <span class="font-mono font-semibold">{{ s.numerator }}</span>
+                <span class="text-muted"> / </span>
+                <span class="font-mono">{{ s.denominator }}</span>
+                <div class="text-xs text-muted">sampel pasien</div>
+              </td>
+              <td class="text-center">
+                <div class="achievement-pill" [class.success]="s.isTargetMet" [class.warning]="!s.isTargetMet">
+                  {{ s.achievementRate }}%
+                </div>
+                <div class="text-xs text-muted">Target: {{ s.targetPercentage }}%</div>
+              </td>
+              <td class="text-center">
+                <span class="status-badge" [ngClass]="getStatusBadgeClass(s.status)">
+                  {{ getStatusLabel(s.status) }}
+                </span>
+                <div *ngIf="s.rejectionNotes" class="text-xs text-danger mt-1 italic">
+                  ⚠️ "{{ s.rejectionNotes }}"
+                </div>
+              </td>
+              <td class="text-right whitespace-nowrap">
+                <button class="btn-detail" (click)="viewDetail(s)">
+                  <span>Detail & Approval</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Indicator Summary (14 Checklist Items) -->
+  <div class="tab-content" *ngIf="activeTab === 'summary'">
+    <div class="summary-cards-grid" *ngIf="summaryData">
+      <div *ngFor="let ind of summaryData.indicators" class="ind-summary-card" [class.card-alert]="ind.needsPdsa">
+        <div class="ind-card-top">
+          <span class="category-tag">{{ ind.categoryName }}</span>
+          <span class="type-tag">{{ ind.auditType }}</span>
+        </div>
+        <h3 class="ind-name">{{ ind.indicatorName }}</h3>
+        <div class="ind-code-badge">{{ ind.indicatorCode }}</div>
+
+        <div class="ind-metrics-row">
+          <div class="metric-col">
+            <span class="metric-label">Capaian Saat Ini</span>
+            <span class="metric-val" [class.text-success]="ind.isTargetMet" [class.text-danger]="!ind.isTargetMet">
+              {{ ind.achievementPercentage }}%
+            </span>
+          </div>
+          <div class="metric-col">
+            <span class="metric-label">Target Standar</span>
+            <span class="metric-val">{{ ind.targetPercentage }}%</span>
+          </div>
+          <div class="metric-col">
+            <span class="metric-label">Sampel Audit</span>
+            <span class="metric-val text-muted">{{ ind.numerator }} / {{ ind.denominator }}</span>
+          </div>
+        </div>
+
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" [style.width.%]="ind.achievementPercentage > 100 ? 100 : ind.achievementPercentage" [class.fill-success]="ind.isTargetMet" [class.fill-danger]="!ind.isTargetMet"></div>
+        </div>
+
+        <div class="ind-footer" *ngIf="ind.needsPdsa">
+          <span class="pdsa-alert-text">⚠️ Target Tidak Tercapai! Wajib Isi PDSA Bulanan</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: Input Audit Baru -->
+  <div class="modal-backdrop" *ngIf="inputModalOpen" (click)="closeInputModal()"></div>
+  <div class="modal-dialog modal-lg" *ngIf="inputModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">📝 Input Audit Observasi Harian NSI</h2>
+          <p class="modal-subtitle">Isi observasi kepatuhan keperawatan untuk pasien yang diaudit hari ini.</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeInputModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>Rumah Sakit</label>
+            <select [(ngModel)]="newAudit.siteId" (change)="onSiteChange(newAudit.siteId)" class="form-input">
+              <option *ngFor="let site of sites" [value]="site.id">{{ site.name }} ({{ site.code }})</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Unit Keperawatan</label>
+            <select [(ngModel)]="newAudit.unitId" class="form-input">
+              <option *ngFor="let unit of units" [value]="unit.id">{{ unit.name }} ({{ unit.code }})</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tanggal Observasi</label>
+            <input type="date" [(ngModel)]="newAudit.auditDate" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Pilih Indikator Mutu NSI (14 Standar)</label>
+          <select [(ngModel)]="newAudit.indicatorId" class="form-input font-medium">
+            <option *ngFor="let ind of indicators" [value]="ind.id">
+              [{{ ind.code }}] {{ ind.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Dynamic Patient Observation Table -->
+        <div class="patient-audit-section mt-4">
+          <div class="section-header-row">
+            <h4>Checklist Pasien Observasi (Denominator & Numerator)</h4>
+            <button type="button" class="btn-add-patient" (click)="addPatientRow()">
+              + Tambah Pasien
+            </button>
+          </div>
+
+          <table class="patient-input-table">
+            <thead>
+              <tr>
+                <th width="50">No</th>
+                <th width="180">No. RM / Inisial</th>
+                <th width="200" class="text-center">Kepatuhan Prosedur</th>
+                <th>Catatan / Keterangan Temuan</th>
+                <th width="50"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of newAudit.items; let idx = index">
+                <td class="text-center font-mono font-semibold">{{ idx + 1 }}</td>
+                <td>
+                  <input type="text" [(ngModel)]="item.patientIdentifier" class="form-input-sm" placeholder="Misal: RM-101" />
+                </td>
+                <td class="text-center">
+                  <div class="compliance-toggle-group">
+                    <button type="button" class="toggle-btn" [class.active-yes]="item.isCompliant" (click)="item.isCompliant = true">
+                      ✓ Ya (Sesuai)
+                    </button>
+                    <button type="button" class="toggle-btn" [class.active-no]="!item.isCompliant" (click)="item.isCompliant = false">
+                      ✗ Tidak
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="item.notes" class="form-input-sm" placeholder="Catatan observasi..." />
+                </td>
+                <td class="text-center">
+                  <button type="button" class="btn-remove-row" (click)="removePatientRow(idx)" title="Hapus Baris">&times;</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Realtime Calculation Box -->
+          <div class="calc-summary-box">
+            <div class="calc-item">
+              <span class="calc-label">Total Sampel Pasien (Denominator):</span>
+              <span class="calc-val">{{ calculateDenominator }}</span>
+            </div>
+            <div class="calc-item">
+              <span class="calc-label">Total Kepatuhan Ya (Numerator):</span>
+              <span class="calc-val text-success">{{ calculateNumerator }}</span>
+            </div>
+            <div class="calc-item highlight">
+              <span class="calc-label">Kalkulasi Capaian Otomatis:</span>
+              <span class="calc-val">{{ calculateComplianceRate }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Catatan Umum Pengajuan (Opsional)</label>
+          <textarea [(ngModel)]="newAudit.notes" rows="2" class="form-input" placeholder="Misal: Audit sampel shift pagi perawat pelaksana"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeInputModal()">Batal</button>
+        <button class="btn-primary" [disabled]="submitting" (click)="submitAudit()">
+          {{ submitting ? 'Menyimpan...' : 'Kirim & Ajukan ke Approval PSQO' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Detail & Approval Workflow Modal -->
+  <div class="modal-backdrop" *ngIf="detailModalOpen" (click)="closeDetailModal()"></div>
+  <div class="modal-dialog modal-xl" *ngIf="detailModalOpen && selectedSubmission">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <span class="status-badge" [ngClass]="getStatusBadgeClass(selectedSubmission.status)">
+            {{ getStatusLabel(selectedSubmission.status) }}
+          </span>
+          <h2 class="modal-title mt-1">{{ selectedSubmission.indicatorName }}</h2>
+          <p class="modal-subtitle">
+            {{ selectedSubmission.hospitalUnitName }} • {{ selectedSubmission.hospitalSiteName }} • Tanggal {{ selectedSubmission.auditDate | slice:0:10 }}
+          </p>
+        </div>
+        <button class="modal-close-btn" (click)="closeDetailModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Visual Approval Step Chain -->
+        <div class="step-chain-card">
+          <h4 class="step-chain-title">Alur Persetujuan & Verifikasi Berjenjang</h4>
+          <div class="step-chain-flex">
+            <div class="chain-step" [class.step-done]="selectedSubmission.status >= 1">
+              <div class="step-circle">1</div>
+              <div class="step-label">Pengajuan PIC</div>
+              <div class="step-sub">{{ selectedSubmission.submittedByName || 'PIC Unit' }}</div>
+            </div>
+            <div class="chain-line" [class.line-done]="selectedSubmission.status >= 2"></div>
+
+            <div class="chain-step" [class.step-done]="selectedSubmission.status >= 2" [class.step-current]="selectedSubmission.status === 1">
+              <div class="step-circle">2</div>
+              <div class="step-label">Approval L1 (PSQO)</div>
+              <div class="step-sub">PSQO / PJ Shift Unit</div>
+            </div>
+            <div class="chain-line" [class.line-done]="selectedSubmission.status >= 3"></div>
+
+            <div class="chain-step" [class.step-done]="selectedSubmission.status >= 3" [class.step-current]="selectedSubmission.status === 2">
+              <div class="step-circle">3</div>
+              <div class="step-label">Approval L2 (Kanit)</div>
+              <div class="step-sub">Kepala Unit</div>
+            </div>
+            <div class="chain-line" [class.line-done]="selectedSubmission.status >= 4"></div>
+
+            <div class="chain-step" [class.step-done]="selectedSubmission.status >= 4" [class.step-current]="selectedSubmission.status === 3">
+              <div class="step-circle">4</div>
+              <div class="step-label">Approval L3 (Kadept NQ)</div>
+              <div class="step-sub">Kadept Nursing Quality</div>
+            </div>
+            <div class="chain-line" [class.line-done]="selectedSubmission.status >= 5"></div>
+
+            <div class="chain-step" [class.step-done]="selectedSubmission.status === 5" [class.step-current]="selectedSubmission.status === 4">
+              <div class="step-circle">5</div>
+              <div class="step-label">Verifikasi Corporate</div>
+              <div class="step-sub">NQ Corporate (Head Group)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Metrics & Patient Items -->
+        <div class="detail-split mt-4">
+          <div class="detail-left">
+            <h4>Rincian Pasien yang Diaudit</h4>
+            <table class="detail-items-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>No. RM / Pasien</th>
+                  <th class="text-center">Kepatuhan</th>
+                  <th>Catatan Pemeriksaan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedSubmission.items; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td class="font-mono font-medium">{{ item.patientIdentifier }}</td>
+                  <td class="text-center">
+                    <span class="compliance-badge" [class.yes]="item.isCompliant" [class.no]="!item.isCompliant">
+                      {{ item.isCompliant ? '✓ Sesuai (Ya)' : '✗ Tidak Sesuai' }}
+                    </span>
+                  </td>
+                  <td class="text-muted text-sm">{{ item.notes || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="detail-right">
+            <h4>Riwayat Aksi & Audit Trail</h4>
+            <div class="history-timeline">
+              <div *ngFor="let h of selectedSubmission.history" class="timeline-entry">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <div class="timeline-header">
+                    <span class="timeline-actor font-semibold">{{ h.actionByName }}</span>
+                    <span class="timeline-time">{{ h.actionDate | slice:0:16 | date:'dd MMM yyyy, HH:mm' }}</span>
+                  </div>
+                  <div class="timeline-status-change">
+                    <span class="text-muted">{{ h.fromStatus }}</span> → <span class="font-medium">{{ h.toStatus }}</span>
+                  </div>
+                  <div class="timeline-notes" *ngIf="h.notes">"{{ h.notes }}"</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Box for Role-based Approvers -->
+        <div class="action-box-card mt-4" *ngIf="canApproveCurrent(selectedSubmission)">
+          <div class="action-box-header">
+            <h4>⚡ Tindakan Persetujuan (Peran Anda: {{ currentUser?.roleDisplayName }})</h4>
+            <p>Data ini sedang menunggu aksi persetujuan dari tingkat wewenang Anda.</p>
+          </div>
+
+          <!-- Reject Form -->
+          <div *ngIf="showRejectInput" class="reject-box">
+            <label class="text-danger font-medium">Catatan Alasan Penolakan / Revisi (Wajib Diisi):</label>
+            <textarea [(ngModel)]="rejectNotes" class="form-input mt-1" rows="2" placeholder="Jelaskan bagian data yang perlu diperbaiki PIC..."></textarea>
+            <div class="mt-2 flex gap-2">
+              <button class="btn-danger-confirm" [disabled]="submitting" (click)="executeApproval('reject')">
+                Konfirmasi Tolak & Minta Revisi
+              </button>
+              <button class="btn-secondary" (click)="showRejectInput = false">Batal</button>
+            </div>
+          </div>
+
+          <!-- Normal Action Buttons -->
+          <div *ngIf="!showRejectInput" class="action-buttons-row">
+            <div class="notes-input-wrapper">
+              <input type="text" [(ngModel)]="workflowNotes" class="form-input" placeholder="Catatan persetujuan (opsional)..." />
+            </div>
+
+            <!-- Level 1 Approval (PSQO) -->
+            <button *ngIf="selectedSubmission.status === 1" class="btn-approve" [disabled]="submitting" (click)="executeApproval('approve_l1')">
+              ✅ Setujui Tingkat 1 (PSQO)
+            </button>
+
+            <!-- Level 2 Approval (Kanit) -->
+            <button *ngIf="selectedSubmission.status === 2" class="btn-approve" [disabled]="submitting" (click)="executeApproval('approve_l2')">
+              ✅ Setujui Tingkat 2 (Kepala Unit)
+            </button>
+
+            <!-- Level 3 Approval (Kadept NQ) -->
+            <button *ngIf="selectedSubmission.status === 3" class="btn-approve" [disabled]="submitting" (click)="executeApproval('approve_l3')">
+              ✅ Setujui Tingkat 3 (Kadept NQ)
+            </button>
+
+            <!-- Corporate Verification (NQ Corp) -->
+            <button *ngIf="selectedSubmission.status === 4" class="btn-verify-corp" [disabled]="submitting" (click)="executeApproval('verify')">
+              👑 Verifikasi & Sinkronkan ke Nursing Web
+            </button>
+
+            <!-- Reject Button -->
+            <button class="btn-reject" (click)="showRejectInput = true">
+              ❌ Tolak / Minta Revisi
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>

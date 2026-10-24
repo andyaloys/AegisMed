@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, DashboardData } from '../../core/services/dashboard.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-capa',
@@ -23,6 +24,10 @@ export class CapaComponent implements OnInit, OnDestroy {
   // CAPA actions list
   capaActions: any[] = [];
   loadingCapas = false;
+
+  // Filter & Search
+  searchQuery = '';
+  statusFilter: 'ALL' | 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CRITICAL' = 'ALL';
 
   private filterSub: Subscription | null = null;
 
@@ -55,12 +60,15 @@ export class CapaComponent implements OnInit, OnDestroy {
   newCapaPreventiveAction = '';
   newCapaActionPlan = '';
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(
+    private dashboardService: DashboardService,
+    private notify: NotificationService
+  ) {}
 
   ngOnInit(): void {
     // Reactively subscribe to sidebar site filter changes
     this.filterSub = this.dashboardService.selectedSiteId$.subscribe(siteId => {
-      this.selectedSiteId = siteId;
+      this.selectedSiteId = (!siteId || siteId === 'undefined' || siteId === 'null') ? undefined : siteId;
       this.loadLayoutData();
       this.loadCapaActions();
     });
@@ -73,8 +81,13 @@ export class CapaComponent implements OnInit, OnDestroy {
   }
 
   loadLayoutData(): void {
+    const cleanSiteId = (!this.selectedSiteId || this.selectedSiteId === 'undefined' || this.selectedSiteId === 'null') 
+      ? undefined 
+      : this.selectedSiteId;
+    this.selectedSiteId = cleanSiteId;
+
     this.dashboardService.getDashboardData(
-      this.selectedSiteId,
+      cleanSiteId,
       this.dashboardService.getFilterStartMonth(),
       this.dashboardService.getFilterEndMonth()
     ).subscribe({
@@ -87,11 +100,17 @@ export class CapaComponent implements OnInit, OnDestroy {
 
   loadCapaActions(): void {
     this.loadingCapas = true;
-    this.dashboardService.getCapaActions(this.selectedSiteId).subscribe({
+    const cleanSiteId = (!this.selectedSiteId || this.selectedSiteId === 'undefined' || this.selectedSiteId === 'null') 
+      ? undefined 
+      : this.selectedSiteId;
+    this.selectedSiteId = cleanSiteId;
+
+    this.dashboardService.getCapaActions(cleanSiteId).subscribe({
       next: (res) => {
         this.capaActions = res;
         this.loadingCapas = false;
         this.loading = false;
+        this.error = false;
       },
       error: (err) => {
         console.error(err);
@@ -202,13 +221,24 @@ export class CapaComponent implements OnInit, OnDestroy {
     }
   }
 
-  deleteCapaAction(id: string): void {
-    if (confirm('Apakah Anda yakin ingin menghapus tindakan CAPA ini? Spreadsheet UGD pada periode & site terkait otomatis akan terbuka kembali.')) {
+  async deleteCapaAction(id: string): Promise<void> {
+    const confirmed = await this.notify.confirm({
+      title: 'Hapus Tindakan CAPA',
+      message: 'Apakah Anda yakin ingin menghapus tindakan CAPA ini? Spreadsheet UGD pada periode & site terkait otomatis akan terbuka kembali.',
+      confirmText: 'Ya, Hapus CAPA',
+      cancelText: 'Batal',
+      type: 'error'
+    });
+
+    if (confirmed) {
       this.dashboardService.deleteCapaAction(id).subscribe({
         next: () => {
+          this.notify.success('Tindakan CAPA berhasil dihapus.');
           this.loadCapaActions();
         },
-        error: (err) => console.error(err)
+        error: (err) => {
+          this.notify.error('Gagal menghapus tindakan CAPA: ' + (err.error?.message || err.message));
+        }
       });
     }
   }
@@ -286,5 +316,52 @@ export class CapaComponent implements OnInit, OnDestroy {
     }
     const site = this.data.siteCompliance.find(s => s.siteId === this.selectedSiteId);
     return site ? site.siteName : 'Semua Rumah Sakit';
+  }
+
+  getFilteredCapas(): any[] {
+    if (!Array.isArray(this.capaActions)) return [];
+    let list = this.capaActions;
+
+    if (this.statusFilter === 'OPEN') {
+      list = list.filter(c => c.status && c.status.toLowerCase() === 'open');
+    } else if (this.statusFilter === 'IN_PROGRESS') {
+      list = list.filter(c => c.status && c.status.toLowerCase() === 'inprogress');
+    } else if (this.statusFilter === 'RESOLVED') {
+      list = list.filter(c => c.status && c.status.toLowerCase() === 'resolved');
+    } else if (this.statusFilter === 'CRITICAL') {
+      list = list.filter(c => c.severity && c.severity.toLowerCase() === 'critical');
+    }
+
+    if (this.searchQuery && this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase().trim();
+      list = list.filter(c => 
+        (c.title && c.title.toLowerCase().includes(q)) ||
+        (c.description && c.description.toLowerCase().includes(q)) ||
+        (c.assignedTo && c.assignedTo.toLowerCase().includes(q)) ||
+        (c.siteName && c.siteName.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }
+
+  getTotalCount(): number {
+    return Array.isArray(this.capaActions) ? this.capaActions.length : 0;
+  }
+
+  getOpenCount(): number {
+    return Array.isArray(this.capaActions) ? this.capaActions.filter(c => c.status && c.status.toLowerCase() === 'open').length : 0;
+  }
+
+  getInProgressCount(): number {
+    return Array.isArray(this.capaActions) ? this.capaActions.filter(c => c.status && c.status.toLowerCase() === 'inprogress').length : 0;
+  }
+
+  getResolvedCount(): number {
+    return Array.isArray(this.capaActions) ? this.capaActions.filter(c => c.status && c.status.toLowerCase() === 'resolved').length : 0;
+  }
+
+  getCriticalCount(): number {
+    return Array.isArray(this.capaActions) ? this.capaActions.filter(c => c.severity && c.severity.toLowerCase() === 'critical').length : 0;
   }
 }

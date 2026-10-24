@@ -1,136 +1,310 @@
 <div class="app-container" [ngClass]="{'sidebar-collapsed': sidebarCollapsed, 'mobile-menu-active': mobileMenuOpen}">
 
-  <!-- Sidebar Component -->
-  <aside class="sidebar-container">
-    <div class="sidebar-header">
-      <div class="logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M6 12h3.5l1.5-5 2 10 1.5-6.5 1 2.5 1-1h1.5"/></svg>
-        <span class="logo-text">Aegis<span style="color: var(--color-info);">Med</span></span>
-      </div>
-      <button class="collapse-btn" (click)="toggleSidebar()" aria-label="Collapse Sidebar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+  <!-- 1. Top Primary Navbar -->
+  <header class="top-primary-navbar">
+    <div class="top-nav-left">
+      <button class="nav-hamburger-btn" (click)="toggleSidebar()" aria-label="Toggle Sidebar Navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
       </button>
-    </div>
 
-    <!-- Hospital Site Selector (Global Filter) -->
-    <div class="site-selector-container">
-      <label class="selector-label" for="globalSiteFilter">
-        <span class="label-icon">🏢</span>
-        <span class="label-text">HOSPITAL SITE</span>
-      </label>
-      <div class="selector-wrapper">
-        <select id="globalSiteFilter" [(ngModel)]="selectedSiteId" (ngModelChange)="onSiteFilterChange()" class="site-select">
-          <option [value]="undefined">Semua Rumah Sakit</option>
+      <div class="brand-container" routerLink="/overview">
+        <div class="brand-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M6 12h3.5l1.5-5 2 10 1.5-6.5 1 2.5 1-1h1.5"/>
+          </svg>
+        </div>
+        <div class="brand-text-wrapper">
+          <span class="brand-title">AEGIS MED</span>
+          <span class="brand-subtitle">NURSQI & CLINICAL QUALITY</span>
+        </div>
+      </div>
+
+      <!-- Quick Hospital Site Dropdown Pill in Header -->
+      <div class="header-site-pill" *ngIf="authService.isCorporate || authService.isAdmin">
+        <span class="site-pill-icon">🏢</span>
+        <select id="headerSiteFilter" [(ngModel)]="selectedSiteId" (ngModelChange)="onSiteFilterChange()" class="header-site-select">
+          <option [ngValue]="undefined">Semua Rumah Sakit (Mayapada Group)</option>
           @if (data && data.siteCompliance) {
             @for (site of data.siteCompliance; track site.siteId) {
-              <option [value]="site.siteId">{{ site.siteName }}</option>
+              <option [ngValue]="site.siteId">{{ site.siteName }}</option>
             }
           }
         </select>
-        <div class="selector-chevron">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
+        <svg class="site-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+
+      <!-- Hospital Badge for Unit/Hospital-bound users -->
+      <div class="header-site-badge-fixed" *ngIf="!authService.isCorporate && !authService.isAdmin && currentUser">
+        <span class="site-pill-icon">🏥</span>
+        <span class="site-fixed-text">{{ currentUser.hospitalSiteName }}</span>
+        <span class="unit-fixed-tag" *ngIf="currentUser.hospitalUnitName">{{ currentUser.hospitalUnitName }}</span>
       </div>
     </div>
 
-    <!-- Navigation Menu -->
-    <nav class="sidebar-nav">
-      <!-- Overview Category -->
-      <div class="menu-category">
-        <a class="nav-link" routerLink="/overview" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span class="link-text">Dashboard Overview</span>
-        </a>
-      </div>
-
-      <!-- Golden Hour Category (Time-Critical) -->
-      <div class="menu-category">
-        <div class="category-header-collapsible" (click)="!sidebarCollapsed ? toggleCategory('goldenHour') : null">
-          <span class="category-title">
-            <span class="category-icon">⏱️</span>
-            <span class="category-text">GOLDEN HOUR (UGD)</span>
-          </span>
-          <svg class="category-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['goldenHour'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+    <div class="top-nav-right">
+      <!-- Quick Role Simulator Dropdown (NursQI CR Requirement) -->
+      <div class="role-switcher-box" title="Ganti simulasi peran pengguna untuk testing approval">
+        <span class="role-icon">👤</span>
+        <div class="role-meta">
+          <span class="role-name-text">{{ currentUser?.fullName || 'Pengguna' }}</span>
+          <span class="role-badge-text">{{ currentUser?.roleDisplayName || 'Role' }}</span>
         </div>
-        
-        <div class="collapsible-menu" [ngClass]="{'expanded': activeCategoryExpanded['goldenHour']}">
-          @if (data && data.edIndicators) {
-            @for (indicator of data.edIndicators; track indicator.id) {
-              <a class="nav-sub-link" [routerLink]="['/ugd-cases', indicator.id]" routerLinkActive="active">
-                <span class="bullet">🩺</span>
-                <span class="link-text">{{ indicator.name }}</span>
-              </a>
-            }
-          }
+        <select class="role-select-inline" [ngModel]="currentUser?.id" (ngModelChange)="switchRole($event)">
+          <option *ngFor="let u of demoUsers" [value]="u.id">
+            {{ u.fullName }} — [{{ u.roleDisplayName }}]
+          </option>
+        </select>
+        <svg class="role-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+
+      <!-- Live Sync Monitor Pill -->
+      <div class="live-status-pill" title="Koneksi Sistem Aktif">
+        <span class="live-dot-ping"></span>
+        <span class="live-text">Live Sync</span>
+      </div>
+
+      <!-- Notification Bell -->
+      <button class="nav-icon-circle-btn" title="Notifikasi Mutu & Temuan CAPA">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge-dot">3</span>
+      </button>
+
+      <!-- User Avatar Profile Trigger -->
+      <button class="nav-user-avatar-btn" (click)="toggleProfileDrawer()" [attr.aria-expanded]="profileDrawerOpen" title="Lihat Profil Pengguna">
+        <div class="user-avatar-circle">
+          <span class="user-avatar-initials">{{ currentUser ? (currentUser.fullName | slice:0:2 | uppercase) : 'AM' }}</span>
         </div>
-      </div>
-
-      <!-- CAPA Actions Category -->
-      <div class="menu-category">
-        <span class="category-header"><span class="category-text">CAPA MANAGEMENT</span></span>
-        <a class="nav-link" routerLink="/capa" routerLinkActive="active">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span class="link-text">CAPA Actions</span>
-        </a>
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <button class="theme-toggle-btn" (click)="toggleTheme()" [attr.aria-label]="theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'">
-        <span class="theme-icon">
-          @if (theme === 'light') {
-            <!-- Moon Icon -->
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          } @else {
-            <!-- Sun Icon -->
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-          }
-        </span>
-        <span class="theme-text">
-          {{ theme === 'light' ? 'Mode Gelap' : 'Mode Terang' }}
-        </span>
       </button>
     </div>
-  </aside>
+  </header>
 
-  <!-- Mobile Top Navigation Bar -->
-  <div class="mobile-header">
-    <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-    <div class="mobile-brand">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M6 12h3.5l1.5-5 2 10 1.5-6.5 1 2.5 1-1h1.5"/></svg>
-      <span>AegisMed</span>
-    </div>
-    <div style="width: 24px;"></div>
+  <div class="layout-body-wrapper">
+    <!-- 3. Left Sidebar Component -->
+    <aside class="sidebar-container">
+      <nav class="sidebar-nav">
+        <!-- Section: OVERVIEW -->
+        <div class="sidebar-section-label">OVERVIEW</div>
+        <div class="menu-category">
+          <a class="nav-link" routerLink="/overview" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span class="link-text">Dashboard Overview</span>
+          </a>
+        </div>
+
+        <!-- Section: NURSING QUALITY (NSI) -->
+        <div class="sidebar-section-label">NURSING QUALITY (NSI)</div>
+        <div class="menu-category">
+          <a class="nav-link" routerLink="/nsi-dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>
+            <span class="link-text">Dashboard Mutu NSI</span>
+          </a>
+          <a class="nav-link" routerLink="/nsi-audit" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span class="link-text">Rekapitulasi Audit NSI</span>
+          </a>
+          <a class="nav-link" routerLink="/pdsa" routerLinkActive="active">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span class="link-text">Tindak Lanjut (PDSA)</span>
+          </a>
+        </div>
+
+        <!-- 3-LEVEL NSI MENU: Indikator Mutu NSI (Level 1) -> 4 Kategori (Level 2) -> Indikator (Level 3) -->
+        <div class="menu-category">
+          <div class="category-header-collapsible" (click)="!sidebarCollapsed ? toggleCategory('nsiMaster') : null" title="Indikator Mutu NSI (14 Indikator Terstandar)">
+            <span class="category-title">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+              <span class="category-text">Indikator Mutu NSI</span>
+            </span>
+            <svg class="category-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['nsiMaster'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+
+          <div class="collapsible-menu" [ngClass]="{'expanded': activeCategoryExpanded['nsiMaster']}">
+            <!-- LEVEL 2: 4 Kategori Mutu NSI -->
+            @for (cat of nsiCategories; track cat.id) {
+              <div class="sub-category-group">
+                <div class="sub-category-header" (click)="toggleNsiCategory(cat.id)" [title]="cat.name">
+                  <span class="sub-cat-title">
+                    <svg class="sub-cat-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    <span class="sub-cat-text">{{ cat.name }}</span>
+                  </span>
+                  <svg class="sub-cat-arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeNsiCategoryExpanded[cat.id] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+
+                <!-- LEVEL 3: Indikator-Indikator di Bawah Kategori -->
+                <div class="sub-collapsible-menu" [ngClass]="{'expanded': activeNsiCategoryExpanded[cat.id]}">
+                  @for (ind of cat.indicators; track ind.id) {
+                    <a class="nav-sub-link level-3-link" [routerLink]="['/nsi-indicators', ind.id]" routerLinkActive="active" [title]="ind.name">
+                      <span class="sub-bullet">●</span>
+                      <span class="link-text">{{ ind.name }}</span>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Section: PROJECT IMPROVEMENT IGD (Renamed from Golden Hour / UGD Cases) -->
+        <div class="sidebar-section-label">PROJECT IMPROVEMENT IGD</div>
+        <div class="menu-category">
+          <a class="nav-link" routerLink="/project-improvement-igd/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>
+            <span class="link-text">Dashboard Mutu IGD</span>
+          </a>
+          <div class="category-header-collapsible" (click)="!sidebarCollapsed ? toggleCategory('goldenHour') : null">
+            <span class="category-title">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="category-text">Indikator Mutu IGD</span>
+            </span>
+            <svg class="category-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="activeCategoryExpanded['goldenHour'] ? 'rotate(90deg)' : 'none'"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          
+          <div class="collapsible-menu" [ngClass]="{'expanded': activeCategoryExpanded['goldenHour']}">
+            @if (data && data.edIndicators) {
+              @for (indicator of data.edIndicators; track indicator.id) {
+                <a class="nav-sub-link" [routerLink]="['/project-improvement-igd', indicator.id]" routerLinkActive="active">
+                  <span class="sub-bullet">●</span>
+                  <span class="link-text">{{ indicator.name }}</span>
+                </a>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Section: CAPA MANAGEMENT -->
+        <div class="sidebar-section-label">CAPA MANAGEMENT</div>
+        <div class="menu-category">
+          <a class="nav-link" routerLink="/capa" routerLinkActive="active">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <span class="link-text">CAPA Actions</span>
+          </a>
+        </div>
+
+        <!-- Section: SYSTEM ADMINISTRATION -->
+        <div class="sidebar-section-label" *ngIf="authService.isAdmin">ADMINISTRATION</div>
+        <div class="menu-category" *ngIf="authService.isAdmin">
+          <a class="nav-link" routerLink="/users" routerLinkActive="active">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="link-text">User Management</span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Sidebar Bottom Mode Switcher -->
+      <div class="sidebar-bottom-controls">
+        <div class="sidebar-control-title">TAMPILAN SIDEBAR</div>
+        <div class="sidebar-mode-toggle-group">
+          <button class="mode-toggle-btn" [class.active]="sidebarCollapsed" (click)="setSidebarMode(true)" title="Tampilan Ringkas">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <span>Ringkas</span>
+          </button>
+          <button class="mode-toggle-btn" [class.active]="!sidebarCollapsed" (click)="setSidebarMode(false)" title="Tampilan Lengkap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Lengkap</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 4. Main Content Area -->
+    <main class="main-content">
+      @if (loading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Memuat konfigurasi layout AegisMed...</p>
+        </div>
+      }
+
+      @if (error && !loading) {
+        <div class="error-state">
+          <h3>Gagal Memuat Konfigurasi</h3>
+          <p>{{ errorMessage }}</p>
+          <button class="retry-btn" (click)="loadLayoutData()">Coba Lagi</button>
+        </div>
+      }
+
+      @if (!loading && !error) {
+        <router-outlet></router-outlet>
+      }
+    </main>
   </div>
 
-  @if (mobileMenuOpen) {
-    <div class="sidebar-overlay" (click)="toggleMobileMenu()"></div>
+  <!-- 5. User Profile Drawer / Flyout Card -->
+  @if (profileDrawerOpen) {
+    <div class="profile-drawer-backdrop" (click)="closeProfileDrawer()"></div>
+    <div class="profile-drawer-card">
+      <div class="profile-card-header">
+        <div class="drawer-avatar-wrapper">
+          <div class="drawer-avatar-circle">
+            <span class="drawer-avatar-initials">{{ currentUser ? (currentUser.fullName | slice:0:2 | uppercase) : 'AM' }}</span>
+          </div>
+        </div>
+        <div class="drawer-user-info">
+          <h3 class="drawer-user-name">{{ currentUser?.fullName || 'Pengguna' }}</h3>
+          <p class="drawer-user-nip">ID: {{ currentUser?.username }} • {{ currentUser?.email }}</p>
+          <div class="drawer-badge-group">
+            <span class="drawer-org-badge">{{ currentUser?.hospitalSiteName || 'Mayapada Healthcare' }}</span>
+            <span class="drawer-role-badge">{{ currentUser?.roleDisplayName }}</span>
+            <span class="drawer-scope-badge" *ngIf="currentUser?.hospitalUnitName">Unit: {{ currentUser?.hospitalUnitName }}</span>
+          </div>
+        </div>
+        <button class="drawer-close-btn" (click)="closeProfileDrawer()" aria-label="Tutup Panel Profil">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="profile-card-body">
+        <!-- Quick Role Switcher in Profile Drawer -->
+        <div class="drawer-section">
+          <label class="drawer-section-title">SIMULASI ROLE / HAK AKSES</label>
+          <p class="text-xs text-muted mb-2">Pilih akun untuk menguji tampilan dashboard dan wewenang approval:</p>
+          <div class="role-quick-list">
+            <div *ngFor="let u of demoUsers" 
+                 class="role-quick-item" 
+                 [class.active]="u.id === currentUser?.id"
+                 (click)="switchRole(u.id)">
+              <div class="font-medium text-sm">{{ u.fullName }}</div>
+              <div class="text-xs text-muted">{{ u.roleDisplayName }} ({{ u.roleScope }})</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customization section -->
+        <div class="drawer-section mt-4">
+          <label class="drawer-section-title">TEMA TAMPILAN</label>
+          <div class="theme-options-grid">
+            <button class="theme-option-box" [class.active]="theme === 'light'" (click)="toggleTheme()">
+              <div class="theme-swatch light"></div>
+              <span>Terang (Classic Light)</span>
+            </button>
+            <button class="theme-option-box" [class.active]="theme === 'dark'" (click)="toggleTheme()">
+              <div class="theme-swatch dark"></div>
+              <span>Gelap (Executive Dark)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-card-footer">
+        <button class="drawer-logout-btn" (click)="authService.logout(); closeProfileDrawer()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Keluar Akun</span>
+        </button>
+      </div>
+    </div>
   }
 
-  <!-- Main Content Area -->
-  <main class="main-content">
-    <!-- Loading State for Layout Setup -->
-    @if (loading) {
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <p>Memuat konfigurasi layout...</p>
-      </div>
-    }
-
-    <!-- Error State for Layout Setup -->
-    @if (error && !loading) {
-      <div class="error-state">
-        <h3>Gagal Memuat Konfigurasi</h3>
-        <p>{{ errorMessage }}</p>
-        <button class="retry-btn" (click)="loadLayoutData()">Coba Lagi</button>
-      </div>
-    }
-
-    <!-- Dynamic Routed Features -->
-    @if (!loading && !error) {
-      <router-outlet></router-outlet>
-    }
-  </main>
+  <!-- Global Custom Feedback Modal & Toasts (Replaces native browser alert/confirm) -->
+  <app-feedback-modal></app-feedback-modal>
 </div>

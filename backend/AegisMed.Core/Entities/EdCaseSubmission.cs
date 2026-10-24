@@ -25,4 +25,15 @@ public class EdCaseSubmission
 
     public Guid HospitalSiteId { get; set; }
     public HospitalSite? HospitalSite { get; set; }
+
+    // Workflow & Approval Fields (Sama dengan NSI)
+    public AuditStatus Status { get; set; } = AuditStatus.Submitted;
+    public Guid? SubmittedById { get; set; }
+    public AppUser? SubmittedBy { get; set; }
+    public DateTime? SubmittedDate { get; set; }
+
+    public Guid? ApprovedById { get; set; }
+    public AppUser? ApprovedBy { get; set; }
+    public DateTime? ApprovedDate { get; set; }
+    public string? RejectionNotes { get; set; }
 }

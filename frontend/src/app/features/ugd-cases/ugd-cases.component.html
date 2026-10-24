@@ -7,118 +7,329 @@
 }
 
 @if (!loadingSubmissions && data) {
-  <div class="header-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-    <div class="title-area">
-      <div class="title-with-badge">
-        <h1 style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.6rem;">⏱️</span>
-          {{ getIndicatorTitle() }}
-        </h1>
-        <span class="hospital-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          {{ getSelectedSiteName() }}
-        </span>
-      </div>
-      <p>Target: {{ getIndicatorTargetText() }} | Pemantauan Waktu Kritis Pelayanan UGD Golden Hour</p>
-    </div>
+  <!-- UNIFIED CONNECTED CONTAINER (Header + Cards + Filters + Table) -->
+  <div class="unified-clinical-card">
     
-    <div style="display: flex; gap: 12px; align-items: center;">
-      <span class="total-badge-excel">Total Kasus: <strong>{{ activeIndicatorSubmissions.length }} Kasus Terinput</strong></span>
-      <button class="btn-primary" (click)="openMobileForm()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-        <span>+ Input Kasus</span>
-      </button>
-    </div>
-  </div>
+    <!-- 1. MODERN CLINICAL INDICATOR HERO BANNER (Title + Action + 4 Nested KPI Cards) -->
+    <div class="indicator-hero-banner">
+      <div class="ind-header-top-row">
+        <div class="ind-header-left">
+          <div class="ind-breadcrumb">
+            <span>Golden Hour (UGD)</span>
+            <span class="sep">/</span>
+            <span class="active">{{ getIndicatorTitle() }}</span>
+          </div>
+          <div class="ind-title-row">
+            <h1 class="ind-main-title">
+              <span class="ind-title-icon">⏱️</span>
+              {{ getIndicatorTitle() }}
+            </h1>
+            <div class="ind-meta-badges">
+              <span class="ind-target-chip">
+                <span class="chip-pulse-dot"></span>
+                Target Standar: {{ getIndicatorTargetText() }}
+              </span>
+              <span class="ind-site-chip">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ getSelectedSiteName() }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ind-header-actions">
+          <button class="btn-export-excel" (click)="exportToExcel()" title="Unduh Dokumen Excel (.xlsx)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+            <span>Unduh Excel</span>
+          </button>
 
-  <!-- Horizontal Date Filter Card -->
-  <div class="dashboard-filter-card section-card">
-    <div class="filter-card-title">
-      ⏱️ Periode Analisis Kasus (Bulan Mulai s.d Selesai)
-    </div>
-    <div class="filter-card-inputs">
-      <div class="filter-field">
-        <label>Dari Bulan:</label>
-        <input type="month" name="filterStartMonth" [(ngModel)]="filterStartMonth" (ngModelChange)="onDateFilterChange()" class="month-input-dashboard">
+          <a class="btn-add-case" [routerLink]="['/ugd-cases', indicatorType, 'input']">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>+ Input Kasus Baru</span>
+          </a>
+        </div>
       </div>
-      <div class="filter-field">
-        <label>Sampai Bulan:</label>
-        <input type="month" name="filterEndMonth" [(ngModel)]="filterEndMonth" (ngModelChange)="onDateFilterChange()" class="month-input-dashboard">
+
+      <!-- 2. CLINICAL KPI ROW (4 Cards Nested Inside Header) -->
+      <div class="ind-kpi-grid">
+        <!-- Card 1: Kepatuhan -->
+        <div class="ind-kpi-card">
+          <div class="kpi-icon-box teal">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="kpi-data">
+            <span class="kpi-label">TINGKAT KEPATUHAN</span>
+            <div class="kpi-value-row">
+              <span class="kpi-num">{{ getCompliancePercentage() }}%</span>
+              <span class="kpi-sub-badge" [class.success]="getCompliancePercentage() >= 80" [class.warning]="getCompliancePercentage() < 80">
+                {{ getAchievedCount() }} / {{ activeIndicatorSubmissions.length }} Kasus
+              </span>
+            </div>
+            <div class="kpi-mini-bar">
+              <div class="kpi-mini-fill" [style.width.%]="getCompliancePercentage()" [class.success]="getCompliancePercentage() >= 80" [class.warning]="getCompliancePercentage() < 80"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Rata-rata Respon Time -->
+        <div class="ind-kpi-card">
+          <div class="kpi-icon-box blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="kpi-data">
+            <span class="kpi-label">RATA-RATA WAKTU RESPON</span>
+            <div class="kpi-value-row">
+              <span class="kpi-num">{{ getAverageMinutes() }} <small>menit</small></span>
+            </div>
+            <span class="kpi-sub-text">Target Standar: {{ getIndicatorTargetText() }}</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Respon Tercepat -->
+        <div class="ind-kpi-card">
+          <div class="kpi-icon-box green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div class="kpi-data">
+            <span class="kpi-label">WAKTU TERCEPAT (BEST)</span>
+            <div class="kpi-value-row">
+              <span class="kpi-num">{{ getFastestMinutes() }} <small>menit</small></span>
+            </div>
+            <span class="kpi-sub-text text-green">Best clinical response rate</span>
+          </div>
+        </div>
+
+        <!-- Card 4: Kasus Butuh Audit / CAPA -->
+        <div class="ind-kpi-card">
+          <div class="kpi-icon-box" [class.red]="getOverdueCount() > 0" [class.green]="getOverdueCount() === 0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="kpi-data">
+            <span class="kpi-label">MELEBIHI TARGET (OVERDUE)</span>
+            <div class="kpi-value-row">
+              <span class="kpi-num">{{ getOverdueCount() }} <small>kasus</small></span>
+            </div>
+            <span class="kpi-sub-text" [class.text-red]="getOverdueCount() > 0">
+              {{ getOverdueCount() > 0 ? 'Perlu evaluasi tindakan CAPA' : 'Seluruh kasus tepat waktu' }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="section-card">
-    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-      <span>Riwayat Penginputan (Spreadsheet View)</span>
-      <span class="badge" style="background-color: var(--color-success-bg); color: var(--color-success); font-weight: 600; padding: 4px 10px; border-radius: 6px;">
-        Achieved: {{ getAchievedCount() }}
-      </span>
+    <!-- 2. CONNECTED SPREADSHEET PANEL BODY (Directly connected to Header) -->
+    <div class="panel-body-connected">
+      <!-- Integrated Connected Toolbar -->
+      <div class="ind-toolbar-connected">
+      <div class="toolbar-left">
+        <!-- Search Input -->
+        <div class="toolbar-search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Cari No Rekam Medis, Inisial, atau Keterangan..." class="toolbar-search-input">
+        </div>
+
+        <!-- Segmented Status Tabs -->
+        <div class="toolbar-status-tabs">
+          <button class="status-tab-btn" [class.active]="statusFilter === 'ALL'" (click)="statusFilter = 'ALL'; onSearchChange()">
+            Semua ({{ activeIndicatorSubmissions.length }})
+          </button>
+          <button class="status-tab-btn success" [class.active]="statusFilter === 'COMPLIANT'" (click)="statusFilter = 'COMPLIANT'; onSearchChange()">
+            ✓ Tercapai ({{ getAchievedCount() }})
+          </button>
+          <button class="status-tab-btn danger" [class.active]="statusFilter === 'OVERDUE'" (click)="statusFilter = 'OVERDUE'; onSearchChange()">
+            ✕ Melebihi ({{ getOverdueCount() }})
+          </button>
+        </div>
+      </div>
+
+      <!-- Date Filter Pill -->
+      <div class="toolbar-right">
+        <div class="compact-date-pill">
+          <span class="date-icon">📅</span>
+          <span class="date-label">Periode:</span>
+          <input type="date" [(ngModel)]="filterStartDate" (ngModelChange)="onDateFilterChange()" class="compact-date-input">
+          <span class="date-separator">s.d</span>
+          <input type="date" [(ngModel)]="filterEndDate" (ngModelChange)="onDateFilterChange()" class="compact-date-input">
+        </div>
+      </div>
     </div>
 
-    <div class="table-wrapper">
-      <table class="custom-table">
+    <div class="table-container-card">
+          <!-- STEPPER ACCORDION TEMPLATE (4-Stage Parity with NSI) -->
+    <ng-template #edCaseStepperTemplate let-sub="sub">
+      <div class="patient-row-stepper-panel">
+        <div class="prs-header">
+          <div class="prs-header-left">
+            <span class="prs-badge">Linimasa Persetujuan Kasus IGD (4 Tahap)</span>
+            <span class="prs-patient">RM: {{ sub.emrNumber }} • Inisial: {{ sub.patientInitials || '-' }}</span>
+          </div>
+          <div class="prs-header-right">
+            <span class="prs-unit-badge">IGD / Unit Gawat Darurat</span>
+            <button type="button" class="prs-btn-close" (click)="toggleRowExpand(sub.id, $event)" title="Tutup panel">✕</button>
+          </div>
+        </div>
+
+        <!-- Stepper 4-Node Track -->
+        <div class="prs-stepper-track">
+          <!-- 1. Input Kasus IGD -->
+          <div class="prs-node done">
+            <div class="prs-circle">✓</div>
+            <div class="prs-node-body">
+              <div class="prs-node-step">Tahap 1</div>
+              <div class="prs-node-title">Input & Pengajuan Kasus</div>
+              <div class="prs-node-actor">{{ getStepActor(sub, 1) }}</div>
+              <div class="prs-node-date" *ngIf="getStepDate(sub, 1)">{{ getStepDate(sub, 1) | date:'dd/MM/yyyy HH:mm' }}</div>
+              <span class="prs-pill done">Diajukan</span>
+            </div>
+          </div>
+
+          <div class="prs-line" [class.done]="(sub.status || 1) >= 2"></div>
+
+          <!-- 2. Validasi PSQO / PJ Shift (L1) -->
+          <div class="prs-node" [ngClass]="getStepStatus(sub, 2)">
+            <div class="prs-circle">{{ (sub.status || 1) >= 2 ? '✓' : '2' }}</div>
+            <div class="prs-node-body">
+              <div class="prs-node-step">Tahap 2</div>
+              <div class="prs-node-title">Validasi PSQO (L1)</div>
+              <div class="prs-node-actor">{{ getStepActor(sub, 2) }}</div>
+              <div class="prs-node-date" *ngIf="getStepDate(sub, 2)">{{ getStepDate(sub, 2) | date:'dd/MM/yyyy HH:mm' }}</div>
+              <span class="prs-pill" [ngClass]="getStepStatus(sub, 2)">
+                {{ (sub.status || 1) >= 2 ? 'Tervalidasi' : ((sub.status || 1) === 1 ? 'Menunggu Validasi' : 'Antrean') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="prs-line" [class.done]="(sub.status || 1) >= 3"></div>
+
+          <!-- 3. Approve Kepala Unit / Kanit (L2) -->
+          <div class="prs-node" [ngClass]="getStepStatus(sub, 3)">
+            <div class="prs-circle">{{ (sub.status || 1) >= 3 ? '✓' : '3' }}</div>
+            <div class="prs-node-body">
+              <div class="prs-node-step">Tahap 3</div>
+              <div class="prs-node-title">Approve Kanit (L2)</div>
+              <div class="prs-node-actor">{{ getStepActor(sub, 3) }}</div>
+              <div class="prs-node-date" *ngIf="getStepDate(sub, 3)">{{ getStepDate(sub, 3) | date:'dd/MM/yyyy HH:mm' }}</div>
+              <span class="prs-pill" [ngClass]="getStepStatus(sub, 3)">
+                {{ (sub.status || 1) >= 3 ? 'Disetujui' : ((sub.status || 1) === 2 ? 'Menunggu Approval' : 'Antrean') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="prs-line" [class.done]="(sub.status || 1) >= 4"></div>
+
+          <!-- 4. Verifikasi Kadept NQ (L3 - Final) -->
+          <div class="prs-node" [ngClass]="getStepStatus(sub, 4)">
+            <div class="prs-circle">{{ (sub.status || 1) >= 4 ? '★' : '4' }}</div>
+            <div class="prs-node-body">
+              <div class="prs-node-step">Tahap 4 (Final)</div>
+              <div class="prs-node-title">Verifikasi Kadept NQ</div>
+              <div class="prs-node-actor">{{ getStepActor(sub, 4) }}</div>
+              <div class="prs-node-date" *ngIf="getStepDate(sub, 4)">{{ getStepDate(sub, 4) | date:'dd/MM/yyyy HH:mm' }}</div>
+              <span class="prs-pill" [ngClass]="getStepStatus(sub, 4)">
+                {{ (sub.status || 1) >= 4 ? 'Terverifikasi (Final)' : ((sub.status || 1) === 3 ? 'Menunggu Verifikasi' : 'Antrean') }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Controls & Clinical Notes -->
+        <div class="prs-footer">
+          <div class="prs-footer-note">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span><strong>Catatan Klinis:</strong> {{ sub.clinicalNotes || 'Kasus IGD ditangani dan didokumentasikan sesuai clinical pathway.' }}</span>
+          </div>
+          <div class="prs-footer-actions">
+            @if ((sub.status || 1) < 4 && canApproveStep(sub.status || 1)) {
+              <button type="button" class="btn-prs-action advance" (click)="advanceWorkflow(sub.id, sub.status || 1, $event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Setujui Tahap Ini ({{ getNextStepName(sub.status || 1) }})</span>
+              </button>
+            }
+            @if ((sub.status || 1) < 4 && !canApproveStep(sub.status || 1)) {
+              <span class="prs-role-notice">🔒 Wewenang approval tahap ini: Role <strong>{{ getRequiredRoleName(sub.status || 1) }}</strong> atau Admin</span>
+            }
+            @if (isAdmin && (sub.status || 1) < 4) {
+              <button type="button" class="btn-prs-action verify-corp" (click)="quickVerify(sub.id, $event)">
+                <span>★ Verifikasi Langsung (Kadept/Admin)</span>
+              </button>
+            }
+            @if ((sub.status || 1) >= 4 && isAdmin) {
+              <button type="button" class="btn-prs-action reset" (click)="quickUnverify(sub.id, $event)">
+                <span>↺ Batalkan / Reset Verifikasi</span>
+              </button>
+            }
+            <a class="btn-prs-action edit" [routerLink]="['/ugd-cases', indicatorType, 'edit', sub.id]">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span>Edit Kasus Ini</span>
+            </a>
+            @if (canDelete(sub)) {
+              <button type="button" class="btn-prs-action delete" (click)="deleteCase(sub, $event)" title="Hapus Data Kasus UGD (Khusus Kanit / Kadept NQ / Admin)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <span>Hapus Kasus</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <div class="table-scroll-area">
+        <table class="custom-table">
         <thead>
           <tr>
-            <th style="width: 50px;">NO</th>
-            <th>NO REKAM MEDIS</th>
-            <th>INISIAL</th>
+            <th class="col-no">NO</th>
+            <th class="col-emr">NO REKAM MEDIS</th>
+            <th class="col-initials">INISIAL</th>
             
             <!-- Dynamic Headers based on indicator code -->
             @if (getIndicatorCode() === 'cardiology') {
-              <th>TANGGAL</th>
-              <th>WAKTU TIBA IGD</th>
-              <th>WAKTU ECG SELESAI</th>
-              <th>SELISIH WAKTU</th>
+              <th class="col-date">TANGGAL</th>
+              <th class="col-time">WAKTU (TIBA ➔ ECG)</th>
+              <th class="col-elapsed">SELISIH</th>
             } @else if (getIndicatorCode() === 'orthopaedics') {
-              <th>DIAGNOSA MEDIS</th>
-              <th>TANGGAL</th>
-              <th>WAKTU TIBA IGD</th>
-              <th>WAKTU ANALGESIK</th>
-              <th>SELISIH WAKTU</th>
-              <th>PRE-ASSESS SKALA NYERI</th>
-              <th>WAKTU PRE-ASSESS</th>
+              <th class="col-diag">DIAGNOSA MEDIS</th>
+              <th class="col-date">TANGGAL</th>
+              <th class="col-time">WAKTU (TIBA ➔ ANALGESIK)</th>
+              <th class="col-elapsed">SELISIH</th>
+              <th class="col-score">SKALA NYERI</th>
+              <th class="col-time-sm">WAKTU ASSESS</th>
             } @else if (getIndicatorCode() === 'neurology') {
-              <th>DIAGNOSA MEDIS</th>
-              <th>TINDAKAN RADIOLOGI</th>
-              <th>TANGGAL</th>
-              <th>WAKTU TIBA IGD</th>
-              <th>WAKTU CT/MRI</th>
-              <th>SELISIH WAKTU</th>
+              <th class="col-diag">DIAGNOSA MEDIS</th>
+              <th class="col-radio">TINDAKAN RADIOLOGI</th>
+              <th class="col-date">TANGGAL</th>
+              <th class="col-time">WAKTU (TIBA ➔ CT/MRI)</th>
+              <th class="col-elapsed">SELISIH</th>
             } @else if (getIndicatorCode() === 'gastrohepatology') {
-              <th>DIAGNOSA MEDIS</th>
-              <th>TANGGAL</th>
-              <th>WAKTU TIBA IGD</th>
-              <th>WAKTU DIAGNOSTIK</th>
-              <th>SELISIH WAKTU</th>
-              <th>PEMERIKSAAN</th>
-              <th>WAKTU PRE-ASSESS</th>
-              <th>WAKTU REQUEST LAB</th>
+              <th class="col-diag">DIAGNOSA MEDIS</th>
+              <th class="col-date">TANGGAL</th>
+              <th class="col-time">WAKTU (TIBA ➔ DIAGNOSTIK)</th>
+              <th class="col-elapsed">SELISIH</th>
+              <th class="col-exam">PEMERIKSAAN</th>
+              <th class="col-time-sm">PRE-ASSESS</th>
+              <th class="col-time-sm">REQUEST LAB</th>
             } @else if (getIndicatorCode() === 'oncology') {
-              <th>DIAGNOSA MEDIS</th>
-              <th>TANGGAL</th>
-              <th>WAKTU TIBA IGD</th>
-              <th>WAKTU ANTIBIOTIK</th>
-              <th>SELISIH WAKTU</th>
-              <th>ANTIBIOTIK IV</th>
-              <th>WAKTU PRE-ASSESS</th>
-              <th>WAKTU RESEP</th>
+              <th class="col-diag">DIAGNOSA MEDIS</th>
+              <th class="col-date">TANGGAL</th>
+              <th class="col-time">WAKTU (TIBA ➔ ANTIBIOTIK)</th>
+              <th class="col-elapsed">SELISIH</th>
+              <th class="col-med">ANTIBIOTIK IV</th>
+              <th class="col-time-sm">PRE-ASSESS</th>
+              <th class="col-time-sm">WAKTU RESEP</th>
             } @else if (getIndicatorCode() === 'mom-children') {
-              <th>TRIAGE / KASUS</th>
-              <th>TANGGAL</th>
-              <th>WAKTU TIBA IGD</th>
-              <th>WAKTU BIDAN TIBA</th>
-              <th>SELISIH WAKTU</th>
+              <th class="col-triage">TRIAGE / KASUS</th>
+              <th class="col-date">TANGGAL</th>
+              <th class="col-time">WAKTU (TIBA ➔ BIDAN)</th>
+              <th class="col-elapsed">SELISIH</th>
             } @else {
-              <th>TANGGAL</th>
-              <th>WAKTU TIBA IGD</th>
-              <th>WAKTU TINDAKAN</th>
-              <th>SELISIH WAKTU</th>
+              <th class="col-date">TANGGAL</th>
+              <th class="col-time">WAKTU (TIBA ➔ TINDAKAN)</th>
+              <th class="col-elapsed">SELISIH</th>
             }
 
-            <th>TARGET</th>
-            <th>KETERANGAN (JIKA TIDAK TERCAPAI)</th>
-            <th>STATUS</th>
-            <th class="col-aksi">AKSI</th>
+            <th class="col-target">TARGET</th>
+            <th class="col-notes">KETERANGAN</th>
+            <th class="col-status" style="width: 140px; text-align: center;">VERIFIKASI</th>
+            <th class="col-aksi" style="width: 180px; text-align: center;">AKSI</th>
           </tr>
         </thead>
         <tbody>
@@ -129,138 +340,235 @@
               </td>
             </tr>
           }
-          @for (sub of getPaginatedSubmissions(); track sub.id; let idx = $index) {
-            <tr>
-              <td>{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
-              <td class="highlight">{{ sub.emrNumber }}</td>
-              <td>{{ sub.patientInitials || 'XX' }}</td>
+          @for (sub of pagedSubmissions; track sub.id; let idx = $index) {
+            <tr class="clickable-row" (click)="toggleRowExpand(sub.id, $event)">
+              <td class="col-no">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
+              <td class="col-emr">
+                <span class="emr-code-pill">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  {{ sub.emrNumber }}
+                </span>
+              </td>
+              <td class="col-initials">
+                <span class="patient-avatar-chip">{{ sub.patientInitials || 'XX' }}</span>
+              </td>
 
               <!-- Dynamic cells mapping -->
               @if (getIndicatorCode() === 'cardiology') {
-                <td>{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                <td>{{ sub.doorTime | date:'HH:mm' }}</td>
-                <td>{{ sub.eventTime | date:'HH:mm' }}</td>
-                <td style="font-weight: 600;">{{ sub.minutesElapsed }} menit</td>
+                <td class="col-date">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                <td class="col-time">
+                  <span class="time-timeline-badge">
+                    {{ sub.doorTime | date:'HH:mm' }} <span class="arrow">➔</span> {{ sub.eventTime | date:'HH:mm' }}
+                  </span>
+                </td>
+                <td class="col-elapsed">
+                  <span class="elapsed-badge" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                    ⏱️ {{ sub.minutesElapsed }} m
+                  </span>
+                </td>
               } @else if (getIndicatorCode() === 'orthopaedics') {
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
-                <td>{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                <td>{{ sub.doorTime | date:'HH:mm' }}</td>
-                <td>{{ sub.eventTime | date:'HH:mm' }}</td>
-                <td style="font-weight: 600;">{{ sub.minutesElapsed }} menit</td>
-                <td style="font-weight: 600; color: #f59e0b;">Skala {{ getCustomFieldValue(sub.customFieldsJson, 'PainScore') }}</td>
-                <td>{{ getCustomFieldTime(sub.customFieldsJson, 'AssessmentTime') | date:'HH:mm' }}</td>
+                <td class="col-diag font-semibold">{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
+                <td class="col-date">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                <td class="col-time">
+                  <span class="time-timeline-badge">
+                    {{ sub.doorTime | date:'HH:mm' }} <span class="arrow">➔</span> {{ sub.eventTime | date:'HH:mm' }}
+                  </span>
+                </td>
+                <td class="col-elapsed">
+                  <span class="elapsed-badge" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                    ⏱️ {{ sub.minutesElapsed }} m
+                  </span>
+                </td>
+                <td class="col-score"><span class="score-pill-number">{{ getCustomFieldValue(sub.customFieldsJson, 'PainScore') }}/10</span></td>
+                <td class="col-time-sm">{{ getCustomFieldTime(sub.customFieldsJson, 'AssessmentTime') }}</td>
               } @else if (getIndicatorCode() === 'neurology') {
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'RadiologyAction') }}</td>
-                <td>{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                <td>{{ sub.doorTime | date:'HH:mm' }}</td>
-                <td>{{ sub.eventTime | date:'HH:mm' }}</td>
-                <td style="font-weight: 600;">{{ sub.minutesElapsed }} menit</td>
+                <td class="col-diag font-semibold">{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
+                <td class="col-radio">{{ getCustomFieldValue(sub.customFieldsJson, 'RadiologyAction') }}</td>
+                <td class="col-date">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                <td class="col-time">
+                  <span class="time-timeline-badge">
+                    {{ sub.doorTime | date:'HH:mm' }} <span class="arrow">➔</span> {{ sub.eventTime | date:'HH:mm' }}
+                  </span>
+                </td>
+                <td class="col-elapsed">
+                  <span class="elapsed-badge" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                    ⏱️ {{ sub.minutesElapsed }} m
+                  </span>
+                </td>
               } @else if (getIndicatorCode() === 'gastrohepatology') {
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
-                <td>{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                <td>{{ sub.doorTime | date:'HH:mm' }}</td>
-                <td>{{ sub.eventTime | date:'HH:mm' }}</td>
-                <td style="font-weight: 600;">{{ sub.minutesElapsed }} menit</td>
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'DiagnosticExam') }}</td>
-                <td>{{ getCustomFieldTime(sub.customFieldsJson, 'AssessmentTime') | date:'HH:mm' }}</td>
-                <td>{{ getCustomFieldTime(sub.customFieldsJson, 'RequestTime') | date:'HH:mm' }}</td>
+                <td class="col-diag font-semibold">{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
+                <td class="col-date">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                <td class="col-time">
+                  <span class="time-timeline-badge">
+                    {{ sub.doorTime | date:'HH:mm' }} <span class="arrow">➔</span> {{ sub.eventTime | date:'HH:mm' }}
+                  </span>
+                </td>
+                <td class="col-elapsed">
+                  <span class="elapsed-badge" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                    ⏱️ {{ sub.minutesElapsed }} m
+                  </span>
+                </td>
+                <td class="col-exam">{{ getCustomFieldValue(sub.customFieldsJson, 'DiagnosticExam') }}</td>
+                <td class="col-time-sm">{{ getCustomFieldTime(sub.customFieldsJson, 'AssessmentTime') }}</td>
+                <td class="col-time-sm">{{ getCustomFieldTime(sub.customFieldsJson, 'RequestTime') }}</td>
               } @else if (getIndicatorCode() === 'oncology') {
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
-                <td>{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                <td>{{ sub.doorTime | date:'HH:mm' }}</td>
-                <td>{{ sub.eventTime | date:'HH:mm' }}</td>
-                <td style="font-weight: 600;">{{ sub.minutesElapsed }} menit</td>
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'AntibioticType') }}</td>
-                <td>{{ getCustomFieldTime(sub.customFieldsJson, 'AssessmentTime') | date:'HH:mm' }}</td>
-                <td>{{ getCustomFieldTime(sub.customFieldsJson, 'PrescriptionTime') | date:'HH:mm' }}</td>
+                <td class="col-diag font-semibold">{{ getCustomFieldValue(sub.customFieldsJson, 'MedicalDiagnosis') }}</td>
+                <td class="col-date">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                <td class="col-time">
+                  <span class="time-timeline-badge">
+                    {{ sub.doorTime | date:'HH:mm' }} <span class="arrow">➔</span> {{ sub.eventTime | date:'HH:mm' }}
+                  </span>
+                </td>
+                <td class="col-elapsed">
+                  <span class="elapsed-badge" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                    ⏱️ {{ sub.minutesElapsed }} m
+                  </span>
+                </td>
+                <td class="col-med">{{ getCustomFieldValue(sub.customFieldsJson, 'AntibioticType') }}</td>
+                <td class="col-time-sm">{{ getCustomFieldTime(sub.customFieldsJson, 'AssessmentTime') }}</td>
+                <td class="col-time-sm">{{ getCustomFieldTime(sub.customFieldsJson, 'PrescriptionTime') }}</td>
               } @else if (getIndicatorCode() === 'mom-children') {
-                <td>{{ getCustomFieldValue(sub.customFieldsJson, 'TriageLevel') }}</td>
-                <td>{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                <td>{{ sub.doorTime | date:'HH:mm' }}</td>
-                <td>{{ sub.eventTime | date:'HH:mm' }}</td>
-                <td style="font-weight: 600;">{{ sub.minutesElapsed }} menit</td>
+                <td class="col-triage"><span class="severity-pill medium">{{ getCustomFieldValue(sub.customFieldsJson, 'TriageLevel') }}</span></td>
+                <td class="col-date">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                <td class="col-time">
+                  <span class="time-timeline-badge">
+                    {{ sub.doorTime | date:'HH:mm' }} <span class="arrow">➔</span> {{ sub.eventTime | date:'HH:mm' }}
+                  </span>
+                </td>
+                <td class="col-elapsed">
+                  <span class="elapsed-badge" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                    ⏱️ {{ sub.minutesElapsed }} m
+                  </span>
+                </td>
               } @else {
-                <td>{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
-                <td>{{ sub.doorTime | date:'HH:mm' }}</td>
-                <td>{{ sub.eventTime | date:'HH:mm' }}</td>
-                <td style="font-weight: 600;">{{ sub.minutesElapsed }} menit</td>
+                <td class="col-date">{{ sub.doorTime | date:'dd/MM/yyyy' }}</td>
+                <td class="col-time">
+                  <span class="time-timeline-badge">
+                    {{ sub.doorTime | date:'HH:mm' }} <span class="arrow">➔</span> {{ sub.eventTime | date:'HH:mm' }}
+                  </span>
+                </td>
+                <td class="col-elapsed">
+                  <span class="elapsed-badge" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                    ⏱️ {{ sub.minutesElapsed }} m
+                  </span>
+                </td>
               }
 
-              <td>
-                <span class="badge" [ngClass]="sub.isCompliant ? 'completed' : 'overdue'">
-                  {{ sub.isCompliant ? 'Tercapai' : 'Tidak Tercapai' }}
+              <!-- Compliance Status Pill -->
+              <td class="col-target">
+                <span class="compliance-status-pill" [class.compliant]="sub.isCompliant" [class.overdue]="!sub.isCompliant">
+                  @if (sub.isCompliant) {
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    TERCAPAI
+                  } @else {
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    TIDAK TERCAPAI
+                  }
                 </span>
               </td>
-              <td>{{ sub.clinicalNotes || '-' }}</td>
-              <td>
-                @if (sub.isClosed) {
-                  <span class="badge" style="background-color: var(--border-color); color: var(--text-secondary); border: 1px solid var(--border-color-hover); font-weight: 600;">
-                    🔒 Tutup
+
+              <!-- Clinical Notes -->
+              <td class="col-notes">
+                @if (sub.clinicalNotes) {
+                  <span class="clinical-notes-tag" [class.alert]="!sub.isCompliant" [title]="sub.clinicalNotes">
+                    💬 {{ sub.clinicalNotes }}
                   </span>
                 } @else {
-                  <span class="badge" style="background-color: var(--color-success-bg); color: var(--color-success); font-weight: 600;">
-                    🔓 Terbuka
-                  </span>
+                  <span style="color: #94a3b8;">-</span>
                 }
               </td>
-              <td class="col-aksi">
-                @if (sub.isClosed) {
-                  <!-- Lock Indicator instead of actions -->
-                  <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">Locked</span>
-                } @else {
-                  <div style="display: flex; gap: 8px;">
-                    <button class="action-btnedit" (click)="startEdit(sub)" title="Edit Kasus">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+
+              <!-- Status Approval Pill -->
+              <td class="col-status text-center" (click)="$event.stopPropagation()">
+                <button type="button" class="btn-verify-status" (click)="toggleRowExpand(sub.id, $event)" title="Klik status untuk membuka/menutup linimasa persetujuan berkas ini">
+                  <span class="status-pill-verified text-xs" [ngClass]="getStatusBadgeClass(sub.status || 1)">
+                    <span class="status-pulse-dot" *ngIf="(sub.status || 1) < 4"></span>
+                    {{ getStatusLabel(sub.status || 1) }}
+                  </span>
+                </button>
+              </td>
+
+              <!-- Action Buttons -->
+              <td class="col-aksi text-center" (click)="$event.stopPropagation()">
+                <div class="table-actions-cell">
+                  <a class="btn-table-action edit" [routerLink]="['/ugd-cases', indicatorType, 'edit', sub.id]" title="Edit Data Kasus UGD">
+                    Edit
+                  </a>
+                  @if ((sub.status || 1) < 4) {
+                    @if (canApproveStep(sub.status || 1)) {
+                      <button type="button" class="btn-table-action advance" (click)="advanceWorkflow(sub.id, sub.status || 1, $event)" [title]="'Setujui ' + getNextStepName(sub.status || 1) + ' (' + (currentUser?.roleDisplayName || currentUser?.roleName) + ')'">
+                        ✓ {{ getNextStepShort(sub.status || 1) }}
+                      </button>
+                    } @else {
+                      <button type="button" class="btn-table-action locked" disabled [title]="'Menunggu verifikasi oleh role ' + getRequiredRoleName(sub.status || 1) + ' (Hanya role tersebut atau Admin yang aktif)'">
+                        🔒 {{ getRequiredRoleName(sub.status || 1) }}
+                      </button>
+                    }
+                  }
+                  @if ((sub.status || 1) >= 4) {
+                    <span class="badge-verified-done" title="Kasus ini telah diverifikasi oleh Kadept NQ">✓ Terverifikasi</span>
+                    @if (isAdmin) {
+                      <button type="button" class="btn-table-action reset" (click)="quickUnverify(sub.id, $event)" title="Batalkan status verifikasi (Reset)">
+                        ↺
+                      </button>
+                    }
+                  }
+                  @if (canDelete(sub)) {
+                    <button type="button" class="btn-table-action delete" (click)="deleteCase(sub, $event)" title="Hapus Data Kasus UGD (Khusus Kanit / Kadept NQ / Admin)">
+                      🗑️
                     </button>
-                    <button class="action-btndelete" (click)="confirmDelete(sub.id)" title="Hapus Kasus">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                    </button>
-                  </div>
-                }
+                  }
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="expandedRowId === sub.id" class="row-expansion-stepper-tr">
+              <td colspan="15">
+                <ng-container *ngTemplateOutlet="edCaseStepperTemplate; context: { sub: sub }"></ng-container>
               </td>
             </tr>
           }
         </tbody>
       </table>
-    </div>
+    </div> <!-- /table-scroll-area -->
 
-    <!-- Pagination Controls -->
-    @if (activeIndicatorSubmissions.length > 0) {
-      <div class="pagination-controls">
+    <!-- Modern Pagination Bar (100% Sesuai NSI) -->
+    <div class="table-pagination-bar" *ngIf="totalSubmissionsCount > 0">
+      <div class="pagination-info">
+        <span class="pagination-count-text">
+          Menampilkan <strong>{{ paginationStartIndex }}</strong> - <strong>{{ paginationEndIndex }}</strong> dari <strong>{{ totalSubmissionsCount }}</strong> data kasus IGD
+        </span>
+      </div>
+      <div class="pagination-actions">
         <div class="page-size-selector">
-          <label for="page-size-select">Tampilkan:</label>
-          <select id="page-size-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
-            <option [ngValue]="5">5</option>
-            <option [ngValue]="10">10</option>
-            <option [ngValue]="25">25</option>
+          <label for="pageSizeSelect" class="page-size-label">Baris per halaman:</label>
+          <select id="pageSizeSelect" [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="page-size-select">
+            <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
           </select>
-          <span>baris per halaman</span>
         </div>
-
-        <div class="pagination-navigation">
-          <button type="button" class="btn-pagination" [disabled]="currentPage === 1" (click)="setPage(currentPage - 1)">
-            &lsaquo; Prev
+        <div class="pagination-nav-group">
+          <button type="button" class="btn-pagination-nav" [disabled]="currentPage === 1" (click)="setPage(1)" title="Halaman Pertama">
+            &laquo;
           </button>
-          
+          <button type="button" class="btn-pagination-nav" [disabled]="currentPage === 1" (click)="setPage(currentPage - 1)" title="Halaman Sebelumnya">
+            &lsaquo;
+          </button>
           <div class="pagination-pages">
-            @for (page of getPageNumbers(); track page) {
-              <button type="button" 
-                      class="btn-page-num" 
-                      [class.active]="page === currentPage"
-                      (click)="setPage(page)">
-                {{ page }}
-              </button>
-            }
+            <button *ngFor="let p of visiblePages" type="button" class="btn-pagination-page" [class.active]="p === currentPage" (click)="setPage(p)">
+              {{ p }}
+            </button>
           </div>
-          
-          <button type="button" class="btn-pagination" [disabled]="currentPage === getTotalPages()" (click)="setPage(currentPage + 1)">
-            Next &rsaquo;
+          <button type="button" class="btn-pagination-nav" [disabled]="currentPage === totalPages" (click)="setPage(currentPage + 1)" title="Halaman Selanjutnya">
+            &rsaquo;
+          </button>
+          <button type="button" class="btn-pagination-nav" [disabled]="currentPage === totalPages" (click)="setPage(totalPages)" title="Halaman Terakhir">
+            &raquo;
           </button>
         </div>
       </div>
-    }
-  </div>
+    </div>
+  </div> <!-- /table-container-card -->
+  </div> <!-- /panel-body-connected -->
+</div> <!-- /unified-clinical-card -->
 }
 
 <!-- ═══════════════ ADD CASE FORM MODAL (⚡ EXCEL STYLE) ═══════════════ -->
@@ -782,25 +1090,4 @@
   </div>
 }
 
-<!-- ═══════════════ DELETE CONFIRMATION MODAL ═══════════════ -->
-@if (showDeleteConfirm) {
-  <div class="modal-overlay">
-    <div class="modal-card" style="max-width: 480px;">
-      <div class="modal-header" style="background-color: var(--color-danger-bg); color: var(--color-danger); border-bottom: 1px solid rgba(225, 29, 72, 0.1);">
-        <h3>⚠️ Konfirmasi Hapus Kasus</h3>
-        <button class="btn-close" (click)="cancelDelete()">&times;</button>
-      </div>
-      <div class="modal-body" style="padding: 20px;">
-        <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.5;">
-          Apakah Anda benar-benar yakin ingin menghapus data kasus ini? Tindakan ini <strong>tidak dapat dibatalkan</strong>.
-        </p>
-      </div>
-      <div class="input-card-footer" style="display: flex; gap: 12px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light);">
-        <button class="btn-modal-cancel" (click)="cancelDelete()" [disabled]="deleting" style="margin: 0;">Batal</button>
-        <button class="btn-save" (click)="executeDelete()" [disabled]="deleting" style="background-color: var(--color-danger); margin: 0; padding: 9px 24px;">
-          {{ deleting ? 'Menghapus...' : 'Hapus Data' }}
-        </button>
-      </div>
-    </div>
-  </div>
-}
+
